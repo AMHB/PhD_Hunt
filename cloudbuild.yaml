@@ -1,0 +1,15 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/phd-agent', '.']
+  
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/phd-agent']
+
+  # Note: The Cloud Run Job creation/update is best done via Terraform or gcloud command line once 
+  # rather than in every build, but we can update the image here if the job exists.
+  # For now, we just build and push.
+
+images:
+  - 'gcr.io/$PROJECT_ID/phd-agent'

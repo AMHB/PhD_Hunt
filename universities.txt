@@ -1,0 +1,230 @@
+# German Universities, Research Institutes, and Fraunhofer Institutes
+# Format: domain.com
+
+# === MAJOR GERMAN UNIVERSITIES (TU9 + Others) ===
+tu-dresden.de
+tum.de
+rwth-aachen.de
+kit.edu
+tu-darmstadt.de
+tu-berlin.de
+tu-braunschweig.de
+tu-clausthal.de
+tu-ilmenau.de
+tu-chemnitz.de
+uni-hannover.de
+leibniz-universitaet.de
+
+# === FRAUNHOFER INSTITUTES (Communications & Security Focus) ===
+# Heinrich Hertz Institute (Telecommunications)
+hhi.fraunhofer.de
+# Fokus (Open Communications Systems)
+fokus.fraunhofer.de
+# SIT (Secure Information Technology)
+sit.fraunhofer.de
+# AISEC (Applied and Integrated Security)
+aisec.fraunhofer.de
+# IIS (Integrated Circuits - Audio/Video/Communication)
+iis.fraunhofer.de
+# IOSB (Optronics, System Technologies)
+iosb.fraunhofer.de
+# IZM (Reliability and Microintegration)
+izm.fraunhofer.de
+# IDMT (Digital Media Technology)
+idmt.fraunhofer.de
+# FIT (Applied Information Technology)
+fit.fraunhofer.de
+# IMS (Microelectronic Circuits)
+ims.fraunhofer.de
+# ITWM (Industrial Mathematics)
+itwm.fraunhofer.de
+# IAO (Industrial Engineering)
+iao.fraunhofer.de
+# IGD (Computer Graphics Research)
+igd.fraunhofer.de
+# FKIE (Communication, Information Processing)
+fkie.fraunhofer.de
+# IPT (Production Technology)
+ipt.fraunhofer.de
+# ICT (Chemical Technology)
+ict.fraunhofer.de
+# ESK (Embedded Systems and Communication Technologies)
+esk.fraunhofer.de
+
+# === OTHER GERMAN RESEARCH INSTITUTES ===
+# DFKI (German Research Center for AI)
+dfki.de
+# ZIB (Konrad-Zuse-Zentrum Berlin)
+zib.de
+# HPI (Hasso Plattner Institute)
+hpi.de
+# DLR (German Aerospace Center)
+dlr.de
+# Helmholtz Research Centers
+helmholtz-berlin.de
+helmholtz.de
+# IHP Microelectronics
+ihp-microelectronics.com
+# CISPA (Cybersecurity Research)
+cispa.de
+# Max Planck Institutes
+mpi-inf.mpg.de
+mpi-sp.org
+mpi-sws.org
+# Leibniz Institutes
+leibniz-ipht.de
+iwt-bremen.de
+
+# === GERMAN UNIVERSITIES (BY REGION) ===
+# North
+uni-bremen.de
+uni-hamburg.de
+tuhh.de
+uni-kiel.de
+uni-rostock.de
+uni-greifswald.de
+uni-luebeck.de
+uni-oldenburg.de
+uol.de
+# West
+uni-bonn.de
+uni-koeln.de
+uni-duesseldorf.de
+uni-due.de
+uni-wuppertal.de
+uni-paderborn.de
+uni-siegen.de
+ruhr-uni-bochum.de
+# South
+uni-freiburg.de
+uni-tuebingen.de
+uni-stuttgart.de
+uni-heidelberg.de
+uni-mannheim.de
+uni-konstanz.de
+uni-ulm.de
+uni-augsburg.de
+uni-wuerzburg.de
+uni-bayreuth.de
+uni-passau.de
+uni-regensburg.de
+ur.de
+fau.eu
+lmu.de
+# East
+uni-potsdam.de
+uni-jena.de
+uni-leipzig.de
+ovgu.de
+# Central
+uni-goettingen.de
+uni-giessen.de
+uni-marburg.de
+uni-kassel.de
+uni-saarland.de
+rptu.de
+
+# === GERMAN UNIVERSITIES OF APPLIED SCIENCES ===
+fh-aachen.de
+b-tu.de
+hs-reutlingen.de
+oth-regensburg.de
+hs-esslingen.de
+h-ka.de
+th-ab.de
+h-brs.de
+th-koeln.de
+haw-hamburg.de
+hm.edu
+h-da.de
+uni-hohenheim.de
+
+# === DACH REGION (Austria, Switzerland) ===
+ethz.ch
+epfl.ch
+tugraz.at
+tuwien.ac.at
+jku.at
+uibk.ac.at
+
+# === NORDIC COUNTRIES ===
+kth.se
+chalmers.se
+lth.se
+aalto.fi
+oulu.fi
+ntnu.no
+dtu.dk
+ku.dk
+
+# === NETHERLANDS ===
+tudelft.nl
+tue.nl
+utwente.nl
+rug.nl
+uva.nl
+vu.nl
+ru.nl
+uu.nl
+cwi.nl
+tno.nl
+
+# === POLAND ===
+pw.edu.pl
+agh.edu.pl
+put.poznan.pl
+pwr.edu.pl
+pg.edu.pl
+pk.edu.pl
+uj.edu.pl
+uw.edu.pl
+polsl.pl
+
+# === CZECH REPUBLIC ===
+cvut.cz
+cuni.cz
+vutbr.cz
+vsb.cz
+muni.cz
+zcu.cz
+
+# === HUNGARY ===
+bme.hu
+elte.hu
+szte.hu
+pte.hu
+uni-obuda.hu
+
+# === ESTONIA ===
+ut.ee
+taltech.ee
+tlu.ee
+
+# === SPAIN ===
+upm.es
+upc.edu
+upv.es
+uc3m.es
+uab.cat
+ugr.es
+us.es
+uv.es
+unizar.es
+uam.es
+csic.es
+imdea.org
+
+# === FRANCE ===
+telecom-paris.fr
+polytechnique.edu
+centralesupelec.fr
+ens.psl.eu
+inria.fr
+cnrs.fr
+cea.fr
+universite-paris-saclay.fr
+sorbonne-universite.fr
+u-bordeaux.fr
+grenoble-inp.fr
+insa-lyon.fr
+

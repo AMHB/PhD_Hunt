@@ -1,0 +1,36 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Hostinger VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            cd /root/phd_agent
+            
+            # Pull latest code from GitHub
+            git pull origin main || git pull origin master
+            
+            # Activate venv and check dependencies
+            source venv/bin/activate
+            pip install -q -r requirements.txt
+            
+            # Show deployment status
+            echo "✅ Deployment complete at $(date)"
+            echo "Files updated:"
+            ls -la *.py

@@ -1,0 +1,31 @@
+# Virtual environment
+venv/
+.venv/
+
+# Environment variables (contains secrets!)
+.env
+
+# Local data files
+job_history.json
+logs/
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+test_crawler.py
