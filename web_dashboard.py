@@ -430,9 +430,9 @@ DASHBOARD_TEMPLATE = """
         <div class="input-section">
             <h3>🔧 Search Configuration</h3>
             <div class="input-group">
-                <label for="keywords">📑 Search Keywords (comma-separated)</label>
-                <textarea id="keywords" placeholder="e.g., Machine Learning, 5G, Cybersecurity, Signal Processing, IoT"></textarea>
-                <p class="input-hint">Leave empty to use default keywords</p>
+                <label for="keywords">📑 Search Keywords (comma-separated) <span style="color: red;">*</span></label>
+                <textarea id="keywords" placeholder="e.g., Machine Learning, 5G, Cybersecurity, Signal Processing, IoT" required></textarea>
+                <p class="input-hint">Required: Enter at least one keyword</p>
             </div>
             <div class="input-group">
                 <label for="positionType">🎯 Position Type</label>
@@ -443,9 +443,9 @@ DASHBOARD_TEMPLATE = """
                 <p class="input-hint">Select the type of academic position to search for</p>
             </div>
             <div class="input-group">
-                <label for="recipientEmail">📧 Send Results To (Email)</label>
-                <input type="email" id="recipientEmail" placeholder="e.g., yourname@gmail.com">
-                <p class="input-hint">Results will be sent to this email</p>
+                <label for="recipientEmail">📧 Send Results To (Email) <span style="color: red;">*</span></label>
+                <input type="email" id="recipientEmail" placeholder="e.g., yourname@gmail.com" required>
+                <p class="input-hint">Required: Enter a valid email address</p>
             </div>
         </div>
         
@@ -508,6 +508,20 @@ DASHBOARD_TEMPLATE = """
             const keywords = document.getElementById('keywords').value.trim();
             const recipientEmail = document.getElementById('recipientEmail').value.trim();
             const positionType = document.getElementById('positionType').value;
+            
+            // Validate required fields
+            if (!keywords) {
+                alert('⚠️ Please enter search keywords!');
+                return;
+            }
+            if (!recipientEmail) {
+                alert('⚠️ Please enter your email address!');
+                return;
+            }
+            if (!recipientEmail.includes('@')) {
+                alert('⚠️ Please enter a valid email address!');
+                return;
+            }
             
             if (recipientEmail && !recipientEmail.includes('@')) {
                 alert('Please enter a valid email address');
@@ -908,9 +922,12 @@ def terminate():
     # Release the lock
     release_lock()
     
+    # Clear the job queue
+    save_queue([])
+    
     return jsonify({
         "success": True,
-        "message": "⛔ Job terminated. Lock released."
+        "message": "⛔ Job terminated. Lock released. Queue cleared."
     })
 
 if __name__ == '__main__':
