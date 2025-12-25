@@ -381,6 +381,23 @@ DASHBOARD_TEMPLATE = """
         .run-btn.running { background: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%); animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         
+        .terminate-btn {
+            width: 100%;
+            padding: 12px 40px;
+            font-size: 1em;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .terminate-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(220, 53, 69, 0.4); }
+        .terminate-btn.show { display: block; }
+        
         .log-box {
             background: #1a1a2e;
             color: #0f0;
@@ -448,6 +465,7 @@ DASHBOARD_TEMPLATE = """
         </div>
         
         <button id="runBtn" class="run-btn" onclick="runAgent()">🚀 Run PhD Agent Now</button>
+        <button id="terminateBtn" class="terminate-btn" onclick="terminateJob()">🛑 Terminate Current Job</button>
         
         <div class="log-box" id="logOutput">Waiting for action...</div>
         
@@ -462,18 +480,22 @@ DASHBOARD_TEMPLATE = """
                     const statusEl = document.getElementById('status');
                     const runBtn = document.getElementById('runBtn');
                     
+                    const terminateBtn = document.getElementById('terminateBtn');
+                    
                     if (data.is_running) {
                         statusEl.textContent = '⏳ Running...';
                         statusEl.className = 'status-value status-running';
                         runBtn.disabled = true;
                         runBtn.textContent = '⏳ Agent is Running...';
                         runBtn.classList.add('running');
+                        terminateBtn.classList.add('show');
                     } else {
                         statusEl.textContent = '✅ Idle';
                         statusEl.className = 'status-value status-idle';
                         runBtn.disabled = false;
                         runBtn.textContent = '🚀 Run PhD Agent Now';
                         runBtn.classList.remove('running');
+                        terminateBtn.classList.remove('show');
                     }
                     
                     document.getElementById('lastRun').textContent = data.last_run || 'Never';
@@ -512,6 +534,21 @@ DASHBOARD_TEMPLATE = """
                 });
         }
         
+        function terminateJob() {
+            if (!confirm('Are you sure you want to terminate the current job?')) {
+                return;
+            }
+            
+            document.getElementById('logOutput').textContent = 'Terminating job...';
+            
+            fetch('/terminate', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('logOutput').textContent = data.message;
+                    updateStatus();
+                });
+        }
+        
         setInterval(updateStatus, 3000);
         updateStatus();
     </script>
@@ -522,7 +559,6 @@ DASHBOARD_TEMPLATE = """
 # ==================== BACKGROUND RUNNER ====================
 def run_agent_background(keywords="", recipient_email=""):
     """Run the PhD agent in background with custom parameters"""
-    global run_status
     run_status["is_running"] = True
     run_status["last_run"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     run_status["last_keywords"] = keywords
@@ -664,8 +700,13 @@ from job_queue import (
 # Per-user job tracking
 user_jobs = {}  # {username: job_id}
 
+# Global process tracker for termination
+current_process = None
+current_process_lock = threading.Lock()
+
 def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, username: str, position_type: str = "phd"):
     """Run the PhD agent for a queued job"""
+    global current_process
     try:
         # Acquire lock for this job
         if not acquire_lock("Mode 2 (Web Dashboard)", username, keywords, recipient_email):
@@ -690,16 +731,25 @@ def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, usern
             text=True
         )
         
-        for line in process.stdout:
-            update_job_log(job_id, line)
+        # Store process for potential termination
+        with current_process_lock:
+            current_process = process
         
-        process.wait()
-        
-        if process.returncode == 0:
-            complete_job(job_id, True, "✅ Success")
-        else:
-            complete_job(job_id, False, f"❌ Failed (code {process.returncode})")
+        try:
+            for line in process.stdout:
+                update_job_log(job_id, line)
             
+            process.wait()
+            
+            if process.returncode == 0:
+                complete_job(job_id, True, "✅ Success")
+            else:
+                complete_job(job_id, False, f"❌ Failed (code {process.returncode})")
+        finally:
+            # Clear process reference
+            with current_process_lock:
+                current_process = None
+                
     except Exception as e:
         complete_job(job_id, False, f"❌ Error: {str(e)}")
     finally:
@@ -835,6 +885,33 @@ def run():
     if recipient_email:
         msg += f" Results will be sent to {recipient_email}"
     return jsonify({"success": True, "queued": False, "message": msg})
+
+@app.route('/terminate', methods=['POST'])
+@login_required
+def terminate():
+    """Terminate the currently running job"""
+    global current_process
+    
+    # Kill the running process if exists
+    with current_process_lock:
+        if current_process:
+            try:
+                current_process.terminate()
+                current_process.wait(timeout=5)
+            except:
+                try:
+                    current_process.kill()
+                except:
+                    pass
+            current_process = None
+    
+    # Release the lock
+    release_lock()
+    
+    return jsonify({
+        "success": True,
+        "message": "⛔ Job terminated. Lock released."
+    })
 
 if __name__ == '__main__':
     import uuid
