@@ -1,6 +1,7 @@
-# PhD Headhunter Agent v1.1 - CI/CD Test - 2024-12-24
+# PhD Headhunter Agent v1.2 - With Custom Recipient Support
 import asyncio
 import os
+import argparse
 import traceback
 from datetime import datetime
 from playwright.async_api import async_playwright
@@ -13,9 +14,12 @@ from email.mime.text import MIMEText
 
 load_dotenv()
 
+# Owner email for status notifications (always goes here)
+OWNER_EMAIL = "amehrb@gmail.com"
+
 def send_status_email(status: str, details: str = ""):
     """
-    Send a simple status notification email.
+    Send status notification email TO OWNER ONLY.
     status: 'STARTED', 'STOPPED', or 'SUCCESS'
     """
     gmail_user = os.getenv("GMAIL_USER")
@@ -46,41 +50,57 @@ def send_status_email(status: str, details: str = ""):
         msg = MIMEText(body)
         msg["Subject"] = subject
         msg["From"] = gmail_user
-        msg["To"] = gmail_user
+        msg["To"] = OWNER_EMAIL  # Always to owner
         
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(gmail_user, gmail_pass)
         server.send_message(msg)
         server.quit()
-        print(f"📧 Status email sent: {status}")
+        print(f"📧 Status email sent to owner: {status}")
     except Exception as e:
         print(f"❌ Failed to send status email: {e}")
 
-async def main():
+async def main(recipient_email=None, custom_keywords=None):
+    """
+    Main PhD agent function.
+    recipient_email: Email to send results to (defaults to OWNER_EMAIL)
+    custom_keywords: Custom keywords to search for (comma-separated)
+    """
     print("Starting PhD Headhunter Agent...")
-    print("Focus: Germany, Austria, Switzerland, Nordic countries")
+    print("Focus: Germany, Austria, Switzerland, Nordic countries + Spain + France")
     print("Filter: PhD positions only (excluding PostDoc/Professor)")
+    
+    if recipient_email:
+        print(f"📧 Results will be sent to: {recipient_email}")
+    if custom_keywords:
+        print(f"🔍 Custom keywords: {custom_keywords}")
+    
     print("-" * 50)
     
     # 1. Load Config
     with open("universities.txt", "r", encoding="utf-8") as f:
         universities = [line.strip() for line in f if line.strip() and not line.startswith("#")]
     
+    # Initialize analyzer with custom keywords if provided
     analyzer = KeywordAnalyzer()
+    if custom_keywords:
+        # Add custom keywords to the analyzer
+        extra_keywords = [kw.strip() for kw in custom_keywords.split(",") if kw.strip()]
+        analyzer.keywords.extend(extra_keywords)
+        print(f"  Added {len(extra_keywords)} custom keywords")
+    
     state_manager = StateManager()
     
     # 2. Run Scrapers
     all_found_jobs = []
     
     async with async_playwright() as p:
-        # Launch browser (headless=True for VPS, False for local debugging)
         browser = await p.chromium.launch(
             headless=True,
             args=["--disable-blink-features=AutomationControlled", "--no-sandbox", "--disable-dev-shm-usage"]
         )
 
-        # Create a context with a real user agent
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             viewport={"width": 1280, "height": 720}
@@ -123,7 +143,6 @@ async def main():
             new_jobs.append(job)
             state_manager.add_job(job)
     
-    # Get previously discovered active jobs (excluding today's new ones)
     old_jobs = [j for j in active_old_jobs if j["url"] not in [nj["url"] for nj in new_jobs]]
 
     # 5. Report
@@ -133,36 +152,46 @@ async def main():
     print(f"  📂 Previously Discovered (still active): {len(old_jobs)}")
     print("=" * 50)
     
-    # 6. Send Email
+    # 6. Send Email to recipient (or owner if not specified)
     gmail_user = os.getenv("GMAIL_USER")
     gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
     
+    # Use specified recipient or default to owner
+    email_to = recipient_email if recipient_email else OWNER_EMAIL
+    
     if gmail_user and gmail_pass:
-        print("\n📧 Sending email report...")
+        print(f"\n📧 Sending email report to {email_to}...")
         sender = EmailSender(gmail_user, gmail_pass)
-        sender.send_email(gmail_user, new_jobs, old_jobs)
+        sender.send_email(email_to, new_jobs, old_jobs)
     else:
         print("\n⚠️ Skipped email (credentials not found in .env)")
 
-def run_with_notifications():
+def run_with_notifications(recipient_email=None, custom_keywords=None):
     """Wrapper that sends status emails on start, crash, and success"""
     
-    # Send STARTED notification
+    # Send STARTED notification (to owner only)
     send_status_email("STARTED")
     
     try:
         # Run the main program
-        asyncio.run(main())
+        asyncio.run(main(recipient_email, custom_keywords))
         
-        # Send SUCCESS notification
+        # Send SUCCESS notification (to owner only)
         send_status_email("SUCCESS")
         
     except Exception as e:
-        # Send STOPPED notification with error details
+        # Send STOPPED notification with error details (to owner only)
         error_details = traceback.format_exc()
         send_status_email("STOPPED", error_details)
-        raise  # Re-raise so the error is logged
+        raise
 
 if __name__ == "__main__":
-    run_with_notifications()
+    parser = argparse.ArgumentParser(description="PhD Headhunter Agent")
+    parser.add_argument("--recipient", "-r", type=str, help="Email address to send results to")
+    parser.add_argument("--keywords", "-k", type=str, help="Custom keywords (comma-separated)")
+    
+    args = parser.parse_args()
+    
+    run_with_notifications(args.recipient, args.keywords)
+
 
