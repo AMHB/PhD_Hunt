@@ -85,10 +85,16 @@ async def main(recipient_email=None, custom_keywords=None):
     # Initialize analyzer with custom keywords if provided
     analyzer = KeywordAnalyzer()
     if custom_keywords:
-        # Add custom keywords to the analyzer
+        # Add custom keywords to a new "Custom" category
         extra_keywords = [kw.strip() for kw in custom_keywords.split(",") if kw.strip()]
-        analyzer.keywords.extend(extra_keywords)
-        print(f"  Added {len(extra_keywords)} custom keywords")
+        if extra_keywords:
+            analyzer.categories["Custom Keywords"] = extra_keywords
+            # Recompile the pattern for custom keywords
+            import re
+            safe_phrases = [re.escape(p) for p in extra_keywords]
+            pattern_str = r"(?i)\b(" + "|".join(safe_phrases) + r")\b"
+            analyzer.compiled_patterns["Custom Keywords"] = re.compile(pattern_str)
+            print(f"  Added {len(extra_keywords)} custom keywords")
     
     state_manager = StateManager()
     
