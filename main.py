@@ -82,19 +82,27 @@ async def main(recipient_email=None, custom_keywords=None):
     with open("universities.txt", "r", encoding="utf-8") as f:
         universities = [line.strip() for line in f if line.strip() and not line.startswith("#")]
     
-    # Initialize analyzer with custom keywords if provided
+    # Initialize analyzer
     analyzer = KeywordAnalyzer()
+    
     if custom_keywords:
-        # Add custom keywords to a new "Custom" category
+        # MODE 2 (Web Dashboard): Use ONLY custom keywords, clear defaults
         extra_keywords = [kw.strip() for kw in custom_keywords.split(",") if kw.strip()]
         if extra_keywords:
+            # Clear default categories and use only custom keywords
+            analyzer.categories.clear()
+            analyzer.compiled_patterns.clear()
+            
+            # Add only the custom keywords
             analyzer.categories["Custom Keywords"] = extra_keywords
-            # Recompile the pattern for custom keywords
             import re
             safe_phrases = [re.escape(p) for p in extra_keywords]
             pattern_str = r"(?i)\b(" + "|".join(safe_phrases) + r")\b"
             analyzer.compiled_patterns["Custom Keywords"] = re.compile(pattern_str)
-            print(f"  Added {len(extra_keywords)} custom keywords")
+            print(f"  🔍 Using ONLY {len(extra_keywords)} custom keywords: {', '.join(extra_keywords)}")
+    else:
+        # MODE 1 (Cron/Default): Use hardcoded keywords from KeywordAnalyzer
+        print("  🔍 Using default hardcoded keywords")
     
     state_manager = StateManager()
     
