@@ -36,7 +36,7 @@ jobs:
             
             # Show deployment status
             echo "✅ Deployment complete at $(date)"
-            echo "🌐 Web dashboard restarted on port 5000"
+            echo "🌐 Web dashboard restarted on port 80"
             echo "Files updated:"
             ls -la *.py
 
