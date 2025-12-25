@@ -280,5 +280,5 @@ def run():
     return jsonify({"success": True, "message": "PhD Agent started! Check status for updates."})
 
 if __name__ == '__main__':
-    # Run on all interfaces, port 80 (HTTP default)
-    app.run(host='0.0.0.0', port=80, debug=False)
+    # Run on all interfaces, port 8080
+    app.run(host='0.0.0.0', port=8080, debug=False)
