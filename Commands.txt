@@ -1,0 +1,10 @@
+cd "m:\My_Local_Repos_AMHB-Rog\Github_Repos\PhD_Hunt"
+.\.venv\Scripts\Activate.ps1
+python main.py
+
+
+
+
+git add .
+git commit -m "Your message"
+git push

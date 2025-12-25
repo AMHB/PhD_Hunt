@@ -26,11 +26,17 @@ jobs:
             # Pull latest code from GitHub
             git pull origin main || git pull origin master
             
-            # Activate venv and check dependencies
+            # Activate venv and install dependencies
             source venv/bin/activate
             pip install -q -r requirements.txt
             
+            # Restart web dashboard (kill old, start new)
+            pkill -f "web_dashboard.py" || true
+            nohup python3 web_dashboard.py > logs/web_dashboard.log 2>&1 &
+            
             # Show deployment status
             echo "✅ Deployment complete at $(date)"
+            echo "🌐 Web dashboard restarted on port 5000"
             echo "Files updated:"
             ls -la *.py
+
