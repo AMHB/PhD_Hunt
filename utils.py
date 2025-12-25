@@ -200,6 +200,86 @@ def is_phd_only(title):
     return False
 
 
+def is_postdoc_only(title):
+    """
+    STRICT filter - only returns True for PostDoc/Tenure Track/Professor positions.
+    Excludes: PhD students, engineering jobs, generic pages
+    """
+    if not title or len(title) < 5:
+        return False
+    
+    title_lower = title.lower()
+    
+    # ===== MUST EXCLUDE - Non-PostDoc positions =====
+    exclude_keywords = [
+        # PhD student positions (NOT PostDoc)
+        "phd student", "phd position", "phd candidate",
+        "doctoral student", "doctoral position",
+        "doktorand", "doktorandin", "doktorarbeit",
+        "promotionsstelle", "promotionsstudent",
+        
+        # Engineering/Industry jobs (NOT academic)
+        "senior engineer", "staff engineer", "lead engineer",
+        "software engineer", "network engineer", "systems engineer",
+        "data engineer", "devops", "developer", "programmer",
+        "manager", "director", "head of", "chief",
+        "technician", "techniker", "operator",
+        "consultant", "analyst", "architect",
+        "intern ", "internship", "praktikum", "werkstudent",
+        
+        # Generic/Admin positions
+        "secretary", "administrative", "coordinator",
+        "marketing", "sales", "hr ", "human resources",
+        "accountant", "finance", "legal",
+        
+        # Generic university pages (not job postings)
+        "welcome to", "about us", "contact us", "home page",
+        "department of", "faculty of", "school of",
+        "university of", "institute of",
+        "news", "events", "calendar", "sitemap",
+        "login", "register", "apply now", "more information",
+        "read more", "click here", "learn more"
+    ]
+    
+    for kw in exclude_keywords:
+        if kw in title_lower:
+            # Exception: if title explicitly mentions postdoc alongside PhD term
+            if any(pd in title_lower for pd in ["postdoc", "professor", "tenure", "faculty"]):
+                return True
+            return False
+    
+    # ===== MUST INCLUDE - Explicit PostDoc/Tenure keywords =====
+    postdoc_keywords = [
+        # PostDoc positions
+        "postdoc", "post-doc", "post doc", "postdoctoral",
+        "postdoctoral researcher", "postdoctoral fellow",
+        "research fellow", "research associate",
+        
+        # Tenure Track / Professor positions
+        "professor", "tenure", "tenure track", "tenure-track",
+        "assistant professor", "associate professor", "full professor",
+        "faculty", "faculty position", "lecturer", "senior lecturer",
+        "juniorprofessur", "juniorprofessor",
+        "w1", "w2", "w3",  # German professorship grades
+        "chair", "endowed chair",
+        "habilitation",
+        "principal investigator", "pi position",
+        "senior researcher", "senior scientist",
+        "group leader", "research group leader"
+    ]
+    
+    for kw in postdoc_keywords:
+        if kw in title_lower:
+            return True
+    
+    # Check for research positions that are likely postdoc level
+    if "research" in title_lower and any(level in title_lower for level in ["senior", "fellow", "associate"]):
+        return True
+    
+    # ===== DEFAULT: Return False (strict filtering) =====
+    return False
+
+
 
 class EmailSender:
     def __init__(self, sender_email, sender_password):

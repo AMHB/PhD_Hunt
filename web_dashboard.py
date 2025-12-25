@@ -413,9 +413,17 @@ DASHBOARD_TEMPLATE = """
         <div class="input-section">
             <h3>🔧 Search Configuration</h3>
             <div class="input-group">
-                <label for="keywords">📑 PhD Keywords (comma-separated)</label>
+                <label for="keywords">📑 Search Keywords (comma-separated)</label>
                 <textarea id="keywords" placeholder="e.g., Machine Learning, 5G, Cybersecurity, Signal Processing, IoT"></textarea>
                 <p class="input-hint">Leave empty to use default keywords</p>
+            </div>
+            <div class="input-group">
+                <label for="positionType">🎯 Position Type</label>
+                <select id="positionType" style="width:100%; padding:12px; border:2px solid #dee2e6; border-radius:8px; font-size:14px;">
+                    <option value="phd">PhD / Doctoral Positions</option>
+                    <option value="postdoc">PostDoc / Tenure Track (Professorship)</option>
+                </select>
+                <p class="input-hint">Select the type of academic position to search for</p>
             </div>
             <div class="input-group">
                 <label for="recipientEmail">📧 Send Results To (Email)</label>
@@ -477,6 +485,7 @@ DASHBOARD_TEMPLATE = """
         function runAgent() {
             const keywords = document.getElementById('keywords').value.trim();
             const recipientEmail = document.getElementById('recipientEmail').value.trim();
+            const positionType = document.getElementById('positionType').value;
             
             if (recipientEmail && !recipientEmail.includes('@')) {
                 alert('Please enter a valid email address');
@@ -484,12 +493,17 @@ DASHBOARD_TEMPLATE = """
             }
             
             document.getElementById('runBtn').disabled = true;
-            document.getElementById('logOutput').textContent = 'Starting PhD Agent...';
+            const posLabel = positionType === 'phd' ? 'PhD' : 'PostDoc/Tenure';
+            document.getElementById('logOutput').textContent = 'Starting ' + posLabel + ' Position Search...';
             
             fetch('/run', { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ keywords: keywords, recipient_email: recipientEmail })
+                body: JSON.stringify({ 
+                    keywords: keywords, 
+                    recipient_email: recipientEmail,
+                    position_type: positionType 
+                })
             })
                 .then(res => res.json())
                 .then(data => {
@@ -650,7 +664,7 @@ from job_queue import (
 # Per-user job tracking
 user_jobs = {}  # {username: job_id}
 
-def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, username: str):
+def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, username: str, position_type: str = "phd"):
     """Run the PhD agent for a queued job"""
     try:
         # Acquire lock for this job
@@ -659,9 +673,10 @@ def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, usern
             complete_job(job_id, False, "Could not acquire lock")
             return
         
-        update_job_log(job_id, "🔐 Lock acquired, starting agent...\n")
+        pos_label = "PhD" if position_type == "phd" else "PostDoc/Tenure"
+        update_job_log(job_id, f"🔐 Lock acquired, starting {pos_label} position search...\n")
         
-        cmd = ["python3", "main.py", "--job-id", job_id]
+        cmd = ["python3", "main.py", "--job-id", job_id, "--position-type", position_type]
         if recipient_email:
             cmd.extend(["--recipient", recipient_email])
         if keywords:
@@ -773,6 +788,7 @@ def run():
     data = request.get_json() or {}
     keywords = data.get("keywords", "")
     recipient_email = data.get("recipient_email", "")
+    position_type = data.get("position_type", "phd")  # Default to PhD
     
     # Create a new job
     job_id = create_job_status(
@@ -783,14 +799,16 @@ def run():
     )
     user_jobs[username] = job_id
     
+    pos_label = "PhD" if position_type == "phd" else "PostDoc/Tenure"
+    
     # Check if a job is already running
     if is_locked():
-        # Add to queue
+        # Add to queue (note: queue doesn't support position_type yet, but it's passed when run starts)
         add_to_queue(username, keywords, recipient_email)
         queue_pos = get_queue_length()
         
         update_job_log(job_id, 
-            f"📋 Your request has been queued (position {queue_pos}).\n\n"
+            f"📋 Your {pos_label} position search has been queued (position {queue_pos}).\n\n"
             f"Currently the server is running for another user's request, "
             f"but your request is in queue and will run afterwards.\n\n"
             f"The result will be emailed to: {recipient_email or 'owner'}"
@@ -807,12 +825,13 @@ def run():
     # Start immediately
     thread = threading.Thread(
         target=run_agent_with_queue, 
-        args=(job_id, keywords, recipient_email, username)
+        args=(job_id, keywords, recipient_email, username, position_type)
     )
     thread.daemon = True
     thread.start()
     
-    msg = "🚀 PhD Agent started!"
+    pos_label = "PhD" if position_type == "phd" else "PostDoc/Tenure"
+    msg = f"🚀 {pos_label} Position Search started!"
     if recipient_email:
         msg += f" Results will be sent to {recipient_email}"
     return jsonify({"success": True, "queued": False, "message": msg})
@@ -822,4 +841,5 @@ if __name__ == '__main__':
     # Initialize users file if needed
     load_users()
     app.run(host='0.0.0.0', port=8080, debug=False)
+
 

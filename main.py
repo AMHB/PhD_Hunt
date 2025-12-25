@@ -61,15 +61,23 @@ def send_status_email(status: str, details: str = ""):
     except Exception as e:
         print(f"❌ Failed to send status email: {e}")
 
-async def main(recipient_email=None, custom_keywords=None):
+async def main(recipient_email=None, custom_keywords=None, position_type="phd"):
     """
     Main PhD agent function.
     recipient_email: Email to send results to (defaults to OWNER_EMAIL)
     custom_keywords: Custom keywords to search for (comma-separated)
+    position_type: "phd" for PhD/Doctoral, "postdoc" for PostDoc/Tenure Track
     """
-    print("Starting PhD Headhunter Agent...")
+    pos_label = "PhD/Doctoral" if position_type == "phd" else "PostDoc/Tenure Track"
+    
+    print(f"Starting Academic Position Headhunter Agent...")
+    print(f"Position Type: {pos_label}")
     print("Focus: Germany, Austria, Switzerland, Nordic countries + Spain + France")
-    print("Filter: PhD positions only (excluding PostDoc/Professor)")
+    
+    if position_type == "phd":
+        print("Filter: PhD positions only (excluding PostDoc/Professor)")
+    else:
+        print("Filter: PostDoc/Tenure positions only (excluding PhD students)")
     
     if recipient_email:
         print(f"📧 Results will be sent to: {recipient_email}")
@@ -142,17 +150,26 @@ async def main(recipient_email=None, custom_keywords=None):
         
         await browser.close()
 
-    # 3. Filter for PhD-only positions
-    print("\n🔍 Filtering for PhD-only positions...")
-    phd_jobs = [job for job in all_found_jobs if is_phd_only(job["title"])]
-    excluded_count = len(all_found_jobs) - len(phd_jobs)
-    print(f"  Kept: {len(phd_jobs)} PhD positions")
-    print(f"  Excluded: {excluded_count} PostDoc/Professor positions")
+    # 3. Filter positions based on position_type
+    from utils import is_postdoc_only
+    
+    if position_type == "phd":
+        print("\n🔍 Filtering for PhD-only positions...")
+        filtered_jobs = [job for job in all_found_jobs if is_phd_only(job["title"])]
+        excluded_count = len(all_found_jobs) - len(filtered_jobs)
+        print(f"  Kept: {len(filtered_jobs)} PhD positions")
+        print(f"  Excluded: {excluded_count} PostDoc/Professor positions")
+    else:  # postdoc
+        print("\n🔍 Filtering for PostDoc/Tenure positions...")
+        filtered_jobs = [job for job in all_found_jobs if is_postdoc_only(job["title"])]
+        excluded_count = len(all_found_jobs) - len(filtered_jobs)
+        print(f"  Kept: {len(filtered_jobs)} PostDoc/Tenure positions")
+        print(f"  Excluded: {excluded_count} PhD/other positions")
 
     # 4. Process Results
     new_jobs = []
     
-    for job in phd_jobs:
+    for job in filtered_jobs:
         if state_manager.is_new(job["url"]):
             new_jobs.append(job)
             state_manager.add_job(job)
@@ -180,7 +197,7 @@ async def main(recipient_email=None, custom_keywords=None):
     else:
         print("\n⚠️ Skipped email (credentials not found in .env)")
 
-def run_with_notifications(recipient_email=None, custom_keywords=None, job_id=None):
+def run_with_notifications(recipient_email=None, custom_keywords=None, job_id=None, position_type="phd"):
     """Wrapper that sends status emails on start, crash, and success"""
     from job_queue import acquire_lock, release_lock, is_locked, get_lock_info
     
@@ -209,8 +226,8 @@ def run_with_notifications(recipient_email=None, custom_keywords=None, job_id=No
     send_status_email("STARTED")
     
     try:
-        # Run the main program
-        asyncio.run(main(recipient_email, custom_keywords))
+        # Run the main program with position_type
+        asyncio.run(main(recipient_email, custom_keywords, position_type))
         
         # Send SUCCESS notification (to owner only)
         send_status_email("SUCCESS")
@@ -230,10 +247,13 @@ if __name__ == "__main__":
     parser.add_argument("--recipient", "-r", type=str, help="Email address to send results to")
     parser.add_argument("--keywords", "-k", type=str, help="Custom keywords (comma-separated)")
     parser.add_argument("--job-id", "-j", type=str, help="Job ID (for Mode 2 queue processing)")
+    parser.add_argument("--position-type", "-p", type=str, default="phd", 
+                        choices=["phd", "postdoc"], help="Position type: phd or postdoc")
     
     args = parser.parse_args()
     
-    run_with_notifications(args.recipient, args.keywords, args.job_id)
+    run_with_notifications(args.recipient, args.keywords, args.job_id, args.position_type)
+
 
 
 
