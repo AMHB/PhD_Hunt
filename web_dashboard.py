@@ -636,33 +636,190 @@ def admin_delete():
     return render_template_string(ADMIN_TEMPLATE, users=users, session=session,
                                   message="User not found", message_type="error")
 
+# ==================== JOB QUEUE INTEGRATION ====================
+import sys
+sys.path.insert(0, '/root/phd_agent')
+
+from job_queue import (
+    is_locked, get_lock_info, acquire_lock, release_lock,
+    add_to_queue, get_queue_position, get_queue_length,
+    pop_next_job, create_job_status, update_job_log, 
+    complete_job, get_job_status
+)
+
+# Per-user job tracking
+user_jobs = {}  # {username: job_id}
+
+def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, username: str):
+    """Run the PhD agent for a queued job"""
+    try:
+        # Acquire lock for this job
+        if not acquire_lock("Mode 2 (Web Dashboard)", username, keywords, recipient_email):
+            update_job_log(job_id, "\n❌ Could not acquire lock\n")
+            complete_job(job_id, False, "Could not acquire lock")
+            return
+        
+        update_job_log(job_id, "🔐 Lock acquired, starting agent...\n")
+        
+        cmd = ["python3", "main.py", "--job-id", job_id]
+        if recipient_email:
+            cmd.extend(["--recipient", recipient_email])
+        if keywords:
+            cmd.extend(["--keywords", keywords])
+        
+        process = subprocess.Popen(
+            cmd,
+            cwd="/root/phd_agent",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
+        
+        for line in process.stdout:
+            update_job_log(job_id, line)
+        
+        process.wait()
+        
+        if process.returncode == 0:
+            complete_job(job_id, True, "✅ Success")
+        else:
+            complete_job(job_id, False, f"❌ Failed (code {process.returncode})")
+            
+    except Exception as e:
+        complete_job(job_id, False, f"❌ Error: {str(e)}")
+    finally:
+        release_lock()
+        # Process next job in queue
+        process_queue()
+
+def process_queue():
+    """Process the next job in queue if any"""
+    next_job = pop_next_job()
+    if next_job:
+        job_id = next_job["job_id"]
+        update_job_log(job_id, "\n🚀 Your turn! Starting job from queue...\n")
+        thread = threading.Thread(
+            target=run_agent_with_queue, 
+            args=(job_id, next_job["keywords"], next_job["recipient"], next_job["user"])
+        )
+        thread.daemon = True
+        thread.start()
+
 @app.route('/status')
 @login_required
 def status():
-    return jsonify(run_status)
+    username = session.get('username', '')
+    
+    # Check if user has an active job
+    job_id = user_jobs.get(username)
+    
+    if job_id:
+        job_status = get_job_status(job_id)
+        if job_status:
+            # Check queue position
+            queue_pos = get_queue_position(job_id)
+            
+            if job_status["status"] == "running":
+                return jsonify({
+                    "is_running": True,
+                    "last_run": job_status.get("started_at"),
+                    "last_result": None,
+                    "log_output": job_status.get("log_output", "")
+                })
+            elif queue_pos > 0:
+                # Job is in queue
+                return jsonify({
+                    "is_running": True,
+                    "last_run": None,
+                    "last_result": None,
+                    "log_output": f"📋 Your request is in queue (position {queue_pos}).\n\n"
+                                  f"Currently the server is running for another user's request, "
+                                  f"but your request is in queue and will run afterwards.\n\n"
+                                  f"The result will be emailed to you when complete."
+                })
+            else:
+                # Job completed
+                return jsonify({
+                    "is_running": False,
+                    "last_run": job_status.get("started_at"),
+                    "last_result": job_status.get("result"),
+                    "log_output": job_status.get("log_output", "")
+                })
+    
+    # No active job for this user
+    if is_locked():
+        lock_info = get_lock_info()
+        queue_len = get_queue_length()
+        return jsonify({
+            "is_running": False,
+            "last_run": None,
+            "last_result": None,
+            "log_output": f"ℹ️ Server is currently busy with another request.\n"
+                          f"Current queue length: {queue_len}\n\n"
+                          f"You can submit a new request - it will be queued."
+        })
+    
+    return jsonify({
+        "is_running": False,
+        "last_run": None,
+        "last_result": None,
+        "log_output": "Ready to run. Enter keywords and click the button."
+    })
 
 @app.route('/run', methods=['POST'])
 @login_required
 def run():
-    global run_status
-    
-    if run_status["is_running"]:
-        return jsonify({"success": False, "message": "Agent is already running!"})
-    
+    username = session.get('username', '')
     data = request.get_json() or {}
     keywords = data.get("keywords", "")
     recipient_email = data.get("recipient_email", "")
     
-    thread = threading.Thread(target=run_agent_background, args=(keywords, recipient_email))
+    # Create a new job
+    job_id = create_job_status(
+        job_id=str(uuid.uuid4())[:8],
+        user=username,
+        keywords=keywords,
+        recipient=recipient_email
+    )
+    user_jobs[username] = job_id
+    
+    # Check if a job is already running
+    if is_locked():
+        # Add to queue
+        add_to_queue(username, keywords, recipient_email)
+        queue_pos = get_queue_length()
+        
+        update_job_log(job_id, 
+            f"📋 Your request has been queued (position {queue_pos}).\n\n"
+            f"Currently the server is running for another user's request, "
+            f"but your request is in queue and will run afterwards.\n\n"
+            f"The result will be emailed to: {recipient_email or 'owner'}"
+        )
+        
+        return jsonify({
+            "success": True, 
+            "queued": True,
+            "message": f"📋 Request queued! Currently the server is running for another user. "
+                       f"Your request is in queue (position {queue_pos}) and will run afterwards. "
+                       f"Results will be emailed to you."
+        })
+    
+    # Start immediately
+    thread = threading.Thread(
+        target=run_agent_with_queue, 
+        args=(job_id, keywords, recipient_email, username)
+    )
     thread.daemon = True
     thread.start()
     
-    msg = "PhD Agent started!"
+    msg = "🚀 PhD Agent started!"
     if recipient_email:
         msg += f" Results will be sent to {recipient_email}"
-    return jsonify({"success": True, "message": msg})
+    return jsonify({"success": True, "queued": False, "message": msg})
 
 if __name__ == '__main__':
+    import uuid
     # Initialize users file if needed
     load_users()
     app.run(host='0.0.0.0', port=8080, debug=False)
+

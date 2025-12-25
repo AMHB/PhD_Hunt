@@ -180,8 +180,30 @@ async def main(recipient_email=None, custom_keywords=None):
     else:
         print("\n⚠️ Skipped email (credentials not found in .env)")
 
-def run_with_notifications(recipient_email=None, custom_keywords=None):
+def run_with_notifications(recipient_email=None, custom_keywords=None, job_id=None):
     """Wrapper that sends status emails on start, crash, and success"""
+    from job_queue import acquire_lock, release_lock, is_locked, get_lock_info
+    
+    # For Mode 1 (no job_id), check if locked and exit if so
+    if job_id is None:  # Mode 1 - Manual/Cron run
+        if is_locked():
+            lock_info = get_lock_info()
+            print("=" * 60)
+            print("⚠️  CANNOT RUN - ANOTHER JOB IS IN PROGRESS")
+            print("=" * 60)
+            print(f"Since currently the server is running for another user's request,")
+            print(f"you should try again later.")
+            print(f"")
+            print(f"Current job info:")
+            print(f"  - Mode: {lock_info.get('mode', 'unknown')}")
+            print(f"  - Started: {lock_info.get('started_at_str', 'unknown')}")
+            print("=" * 60)
+            return
+        
+        # Try to acquire lock for Mode 1
+        if not acquire_lock("Mode 1 (Manual/Cron)", "cron", custom_keywords or "", recipient_email or ""):
+            print("⚠️ Could not acquire lock. Try again later.")
+            return
     
     # Send STARTED notification (to owner only)
     send_status_email("STARTED")
@@ -198,14 +220,20 @@ def run_with_notifications(recipient_email=None, custom_keywords=None):
         error_details = traceback.format_exc()
         send_status_email("STOPPED", error_details)
         raise
+    finally:
+        # Only release lock if Mode 1 (we acquired it)
+        if job_id is None:
+            release_lock()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PhD Headhunter Agent")
     parser.add_argument("--recipient", "-r", type=str, help="Email address to send results to")
     parser.add_argument("--keywords", "-k", type=str, help="Custom keywords (comma-separated)")
+    parser.add_argument("--job-id", "-j", type=str, help="Job ID (for Mode 2 queue processing)")
     
     args = parser.parse_args()
     
-    run_with_notifications(args.recipient, args.keywords)
+    run_with_notifications(args.recipient, args.keywords, args.job_id)
+
 
 
