@@ -20,7 +20,7 @@ OWNER_EMAIL = "amehrb@gmail.com"
 def send_status_email(status: str, details: str = ""):
     """
     Send status notification email TO OWNER ONLY.
-    status: 'STARTED', 'STOPPED', or 'SUCCESS'
+    status: 'STARTED', 'STOPPED', or 'SUCCESS'¬
     """
     gmail_user = os.getenv("GMAIL_USER")
     gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
@@ -93,6 +93,9 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd"):
     # Initialize analyzer
     analyzer = KeywordAnalyzer()
     
+    # Track keywords for scraper
+    scraper_keywords = None
+    
     if custom_keywords:
         # MODE 2 (Web Dashboard): Use ONLY custom keywords, clear defaults
         extra_keywords = [kw.strip() for kw in custom_keywords.split(",") if kw.strip()]
@@ -108,6 +111,9 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd"):
             pattern_str = r"(?i)\b(" + "|".join(safe_phrases) + r")\b"
             analyzer.compiled_patterns["Custom Keywords"] = re.compile(pattern_str)
             print(f"  🔍 Using ONLY {len(extra_keywords)} custom keywords: {', '.join(extra_keywords)}")
+            
+            # Store custom keywords for scraper
+            scraper_keywords = extra_keywords
     else:
         # MODE 1 (Cron/Default): Use hardcoded keywords from KeywordAnalyzer
         print("  🔍 Using default hardcoded keywords")
@@ -128,9 +134,9 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd"):
             viewport={"width": 1280, "height": 720}
         )
         
-        # 2a. Scrape Global Portals
+        # 2a. Scrape Global Portals - pass custom keywords if Mode 2
         print("\n📡 Running Global Portal Scraper...")
-        gp_scraper = GlobalPortalScraper(analyzer)
+        gp_scraper = GlobalPortalScraper(analyzer, custom_keywords=scraper_keywords)
         gp_jobs = await gp_scraper.scrape(context)
         all_found_jobs.extend(gp_jobs)
         print(f"✓ Found {len(gp_jobs)} jobs from global portals")

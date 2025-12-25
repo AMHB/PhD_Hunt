@@ -13,18 +13,24 @@ class BaseScraper:
         raise NotImplementedError
 
 class GlobalPortalScraper(BaseScraper):
-    def __init__(self, analyzer: KeywordAnalyzer):
+    def __init__(self, analyzer: KeywordAnalyzer, custom_keywords=None):
         super().__init__(analyzer)
-        # Expanded search terms for your CV keywords
-        self.search_terms = [
-            "6G", "5G", "Open RAN", "O-RAN", "vRAN",
-            "Network Slicing", "ISAC", "Terahertz", "THz",
-            "Zero Trust", "Post-Quantum", "PQC",
-            "Federated Learning", "Edge AI", "Digital Twin",
-            "Massive MIMO", "Beamforming", "Signal Processing",
-            "Network Security", "IoT Security", "SDN", "NFV",
-            "Satellite Communications", "NTN", "Wireless Communications", "electrical Engineering", "electronic engineering", "communication systems",
-            "IOT", "Zero Trust", "communication engineering"]
+        
+        # If custom_keywords provided (Mode 2), use ONLY those
+        # Otherwise use hardcoded default keywords (Mode 1)
+        if custom_keywords:
+            self.search_terms = custom_keywords
+        else:
+            # Expanded search terms for your CV keywords (Mode 1 default)
+            self.search_terms = [
+                "6G", "5G", "Open RAN", "O-RAN", "vRAN",
+                "Network Slicing", "ISAC", "Terahertz", "THz",
+                "Zero Trust", "Post-Quantum", "PQC",
+                "Federated Learning", "Edge AI", "Digital Twin",
+                "Massive MIMO", "Beamforming", "Signal Processing",
+                "Network Security", "IoT Security", "SDN", "NFV",
+                "Satellite Communications", "NTN", "Wireless Communications", "electrical Engineering", "electronic engineering", "communication systems",
+                "IOT", "Zero Trust", "communication engineering"]
         
         # Target countries - Germany, Austria, Switzerland (DACH) + Nordic
         self.target_countries = [
