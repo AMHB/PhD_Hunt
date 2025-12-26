@@ -830,3 +830,78 @@ class DeepUniversityCrawler(BaseScraper):
 # Alias for backwards compatibility
 UniversityScraper = DeepUniversityCrawler
 
+"""
+ResearchGate Scraper Module (appended to scraper.py)
+"""
+
+class ResearchGateScraper(BaseScraper):
+    """Scrape jobs from ResearchGate Jobs"""
+    
+    async def scrape(self, context):
+        jobs = []
+        page = await context.new_page()
+        
+        try:
+            print("\n🔍 Scraping ResearchGate Jobs...")
+            
+            # Navigate to ResearchGate Jobs
+            base_url = "https://www.researchgate.net/jobs"
+            await page.goto(base_url, wait_until='networkidle', timeout=30000)
+            await asyncio.sleep(2)
+            
+            # Try to search for positions
+            # Note: ResearchGate may require different search approach
+            # Let's scrape recent postings first
+            
+            job_cards = await page.query_selector_all('[data-testid="job-card"]')
+            
+            if not job_cards:
+                # Fallback: try different selectors
+                job_cards = await page.query_selector_all('.job-item, .job-listing')
+            
+            for card in job_cards[:15]:  # Limit to 15 jobs
+                try:
+                    # Extract job details
+                    title_elem = await card.query_selector('h3, .job-title, [data-testid="job-title"]')
+                    institution_elem = await card.query_selector('.institution, .company, [data-testid="institution"]')
+                    link_elem = await card.query_selector('a[href*="/job/"], a.job-link')
+                    
+                    if title_elem and link_elem:
+                        title = (await title_elem.inner_text()).strip()
+                        institution = (await institution_elem.inner_text()).strip() if institution_elem else "Unknown"
+                        rel_url = await link_elem.get_attribute('href')
+                        
+                        # Build full URL
+                        if rel_url.startswith('/'):
+                            url = f"https://www.researchgate.net{rel_url}"
+                        elif rel_url.startswith('http'):
+                            url = rel_url
+                        else:
+                            continue
+                        
+                        # Check if relevant to search terms
+                        relevance_score = self.analyzer.calculate_relevance(f"{title} {institution}")
+                        
+                        if relevance_score > 0:
+                            jobs.append({
+                                'title': title,
+                                'institution': institution,
+                                'location': "Not specified",
+                                'url': url,
+                                'relevance_score': relevance_score,
+                                'source': 'ResearchGate'
+                            })
+                
+                except Exception as e:
+                    print(f"⚠️ Error parsing ResearchGate job card: {str(e)}")
+                    continue
+             
+            await page.close()
+            print(f"✅ ResearchGate: Found {len(jobs)} relevant positions")
+            
+        except Exception as e:
+            print(f"❌ ResearchGate scraping error: {str(e)}")
+            await page.close()
+        
+        self.jobs = jobs
+        return jobs

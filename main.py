@@ -3,11 +3,15 @@ import asyncio
 import os
 import argparse
 import traceback
+import sys
 from datetime import datetime
 from playwright.async_api import async_playwright
-from scraper import GlobalPortalScraper, UniversityScraper
+from scraper import GlobalPortalScraper, UniversityScraper, ResearchGateScraper
 from analyzer import KeywordAnalyzer
-from utils import StateManager, EmailSender, is_phd_only
+from utils import send_status_email, send_report_email, load_universities
+from state_manager import StateManager
+from linkedin_scraper import LinkedInScraper
+from llm_verifier import batch_verify_jobs
 from dotenv import load_dotenv
 import smtplib
 from email.mime.text import MIMEText
@@ -148,6 +152,28 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd"):
         all_found_jobs.extend(uni_jobs)
         print(f"✓ Found {len(uni_jobs)} jobs from universities")
         
+        # 2c. Scrape ResearchGate
+        print("\n🔬 Running ResearchGate Scraper...")
+        try:
+            rg_scraper = ResearchGateScraper(analyzer)
+            rg_jobs = await rg_scraper.scrape(context)
+            all_found_jobs.extend(rg_jobs)
+            print(f"✓ Found {len(rg_jobs)} jobs from ResearchGate")
+        except Exception as e:
+            print(f"⚠️ ResearchGate scraping failed: {str(e)}")
+        
+        # 2d. Scrape LinkedIn (requires separate browser instance for authentication)
+        print("\n💼 Running LinkedIn Scraper...")
+        try:
+            linkedin_scraper = LinkedInScraper()
+            position_type = "phd" if args.position_type == "phd" else "postdoc"
+            linkedin_keywords = custom_keywords if custom_keywords else "PhD position"
+            linkedin_jobs = await linkedin_scraper.scrape(linkedin_keywords, position_type)
+            all_found_jobs.extend(linkedin_jobs)
+            print(f"✓ Found {len(linkedin_jobs)} jobs from LinkedIn")
+        except Exception as e:
+            print(f"⚠️ LinkedIn scraping failed: {str(e)}")
+        
         # 2c. Recheck previously discovered positions
         print("\n🔄 Rechecking previously discovered positions...")
         page = await context.new_page()
@@ -155,8 +181,23 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd"):
         await page.close()
         
         await browser.close()
-
-    # 3. Filter positions based on position_type
+    
+    # 3. LLM Verification - Filter invalid/duplicate jobs with ChatGPT
+    print(f"\n📊 Total jobs found (before verification): {len(all_found_jobs)}")
+    
+    if all_found_jobs:
+        print("\n🤖 Running LLM verification (ChatGPT filtering)...")
+        try:
+            verification_keywords = custom_keywords if custom_keywords else "PhD research position"
+            verified_jobs = batch_verify_jobs(all_found_jobs, verification_keywords)
+            print(f"✅ After LLM verification: {len(verified_jobs)} valid jobs")
+            print(f"🗑️  Removed: {len(all_found_jobs) - len(verified_jobs)} invalid/duplicate jobs")
+            all_found_jobs = verified_jobs
+        except Exception as e:
+            print(f"⚠️ LLM verification failed: {str(e)}")
+            print("   Proceeding with unverified jobs...")
+    
+    # 4. Filter positions based on position_type
     from utils import is_postdoc_only
     
     if position_type == "phd":
