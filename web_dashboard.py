@@ -770,21 +770,16 @@ def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, usern
     """Run the PhD agent for a queued job"""
     global current_process
     try:
-        # Acquire lock for this job
-        if not acquire_lock("Mode 2 (Web Dashboard)", username, keywords, recipient_email):
-            update_job_log(job_id, "\n❌ Could not acquire lock\n")
-            complete_job(job_id, False, "Could not acquire lock")
-            return
-        
         pos_label = "PhD" if position_type == "phd" else "PostDoc/Tenure"
-        update_job_log(job_id, f"🔐 Lock acquired, starting {pos_label} position search...\n")
         
+        # Build command
         cmd = ["python3", "main.py", "--job-id", job_id, "--position-type", position_type]
         if recipient_email:
             cmd.extend(["--recipient", recipient_email])
         if keywords:
             cmd.extend(["--keywords", keywords])
         
+        # Start process FIRST to get PID
         process = subprocess.Popen(
             cmd,
             cwd="/root/phd_agent",
@@ -796,6 +791,15 @@ def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, usern
         # Store process for potential termination
         with current_process_lock:
             current_process = process
+        
+        # Acquire lock WITH PID for process validation
+        if not acquire_lock("Mode 2 (Web Dashboard)", username, keywords, recipient_email, pid=process.pid):
+            update_job_log(job_id, "\n❌ Could not acquire lock\n")
+            complete_job(job_id, False, "Could not acquire lock")
+            process.terminate()
+            return
+        
+        update_job_log(job_id, f"🔐 Lock acquired (PID: {process.pid}), starting {pos_label} position search...\n")
         
         try:
             for line in process.stdout:

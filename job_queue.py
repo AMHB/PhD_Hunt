@@ -22,6 +22,14 @@ def ensure_jobs_dir():
     if not os.path.exists(JOBS_DIR):
         os.makedirs(JOBS_DIR)
 
+def process_exists(pid: int) -> bool:
+    """Check if a process with given PID exists"""
+    try:
+        os.kill(pid, 0)  # Signal 0 = check existence without killing
+        return True
+    except (OSError, ProcessLookupError):
+        return False
+
 def get_lock_info() -> Optional[Dict]:
     """Get current lock info if a job is running"""
     with _file_lock:
@@ -29,6 +37,14 @@ def get_lock_info() -> Optional[Dict]:
             try:
                 with open(LOCK_FILE, "r") as f:
                     lock_data = json.load(f)
+                    
+                    # Check if process is still running (NEW: PID validation)
+                    pid = lock_data.get("pid")
+                    if pid and not process_exists(pid):
+                        # Process crashed, auto-cleanup stale lock
+                        os.remove(LOCK_FILE)
+                        return None
+                    
                     # Check if lock is stale (older than 4 hours = 14400 seconds)
                     if time.time() - lock_data.get("started_at", 0) > 14400:
                         os.remove(LOCK_FILE)
@@ -38,7 +54,7 @@ def get_lock_info() -> Optional[Dict]:
                 return None
         return None
 
-def acquire_lock(mode: str, user: str = "cron", keywords: str = "", recipient: str = "") -> bool:
+def acquire_lock(mode: str, user: str = "cron", keywords: str = "", recipient: str = "", pid: Optional[int] = None) -> bool:
     """
     Try to acquire job lock.
     Returns True if lock acquired, False if another job is running.
@@ -61,7 +77,8 @@ def acquire_lock(mode: str, user: str = "cron", keywords: str = "", recipient: s
             "keywords": keywords,
             "recipient": recipient,
             "started_at": time.time(),
-            "started_at_str": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "started_at_str": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "pid": pid  # Store process ID for validation
         }
         with open(LOCK_FILE, "w") as f:
             json.dump(lock_data, f)
@@ -208,3 +225,21 @@ def cleanup_old_jobs(max_age_hours: int = 24):
             filepath = os.path.join(JOBS_DIR, filename)
             if current_time - os.path.getmtime(filepath) > max_age_hours * 3600:
                 os.remove(filepath)
+
+def cleanup_stale_queue():
+    """Remove queue items that don't have valid job status files"""
+    queue = load_queue()
+    valid_queue = []
+    
+    for job in queue:
+        job_id = job.get("job_id")
+        if job_id and get_job_status(job_id):
+            valid_queue.append(job)
+    
+    if len(valid_queue) != len(queue):
+        save_queue(valid_queue)
+        removed_count = len(queue) - len(valid_queue)
+        print(f"🧹 Cleaned up {removed_count} stale queue item(s)")
+    
+    return len(valid_queue)
+
