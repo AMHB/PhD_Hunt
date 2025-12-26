@@ -8,8 +8,7 @@ from datetime import datetime
 from playwright.async_api import async_playwright
 from scraper import GlobalPortalScraper, UniversityScraper, ResearchGateScraper
 from analyzer import KeywordAnalyzer
-from utils import send_status_email, send_report_email, load_universities
-from state_manager import StateManager
+from utils import StateManager, EmailSender, is_phd_only, is_postdoc_only
 from linkedin_scraper import LinkedInScraper
 from llm_verifier import batch_verify_jobs
 from dotenv import load_dotenv
