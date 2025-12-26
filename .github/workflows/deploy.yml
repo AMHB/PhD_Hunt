@@ -20,6 +20,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
+          command_timeout: 30m
           script: |
             cd /root/phd_agent
             
@@ -30,13 +31,15 @@ jobs:
             source venv/bin/activate
             pip install -q -r requirements.txt
             
-            # Restart web dashboard (kill old, start new)
-            pkill -f "web_dashboard.py" || true
-            nohup python3 web_dashboard.py > logs/web_dashboard.log 2>&1 &
+            # Restart web dashboard (kill old, start new with setsid for persistence)
+            pkill -f "python3 web_dashboard" || true
+            setsid nohup python3 -u web_dashboard.py > logs/web_dashboard.log 2>&1 < /dev/null &
+            
+            # Wait and verify
+            sleep 3
+            ps aux | grep 'python3 web_dashboard' | grep -v grep || echo "Warning: Process check failed"
             
             # Show deployment status
             echo "✅ Deployment complete at $(date)"
-            echo "🌐 Web dashboard restarted on port 80"
-            echo "Files updated:"
-            ls -la *.py
-
+            echo "📁 Files updated:"
+            ls -la *.py | head -5
