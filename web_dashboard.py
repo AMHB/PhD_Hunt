@@ -399,15 +399,42 @@ DASHBOARD_TEMPLATE = """
         .terminate-btn.show { display: block; }
         
         .log-box {
-            background: #1a1a2e;
+            background: #000;
             color: #0f0;
             font-family: 'Courier New', monospace;
             font-size: 11px;
             padding: 15px;
-            border-radius: 10px;
-            max-height: 180px;
+            max-height: 300px;
             overflow-y: auto;
             white-space: pre-wrap;
+            border-top: 1px solid #333;
+        }
+        details {
+            margin-top: 20px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+        summary {
+            padding: 12px 15px;
+            cursor: pointer;
+            color: #aaa;
+            font-weight: bold;
+            user-select: none;
+            outline: none;
+            background: #222;
+        }
+        summary:hover {
+            color: #fff;
+            background: #333;
+        }
+        .status-msg-box {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1.1em;
+            min-height: 24px;
+            color: #4cd137;
         }
         .footer { text-align: center; margin-top: 20px; color: #999; font-size: 0.85em; }
     </style>
@@ -467,9 +494,14 @@ DASHBOARD_TEMPLATE = """
         <button id="runBtn" class="run-btn" onclick="runAgent()">🚀 Run PhD Agent Now</button>
         <button id="terminateBtn" class="terminate-btn" onclick="terminateJob()">🛑 Terminate Current Job</button>
         
-        <div class="log-box" id="logOutput">Waiting for action...</div>
+        <div id="statusMessage" class="status-msg-box"></div>
         
-        <div class="footer">PhD Headhunter v1.3 | Written by A.Mehrban (amehrb@gmail.com) | Hostinger VPS</div>
+        <details>
+            <summary>🖥️ Show Real-Time Terminal Output</summary>
+            <div class="log-box" id="logOutput">Waiting for action...</div>
+        </details>
+        
+        <div class="footer">PhD Headhunter v1.4 | Written by A.Mehrban (amehrb@gmail.com) | Hostinger VPS</div>
     </div>
 
     <script>
@@ -480,6 +512,7 @@ DASHBOARD_TEMPLATE = """
                     const statusEl = document.getElementById('status');
                     const runBtn = document.getElementById('runBtn');
                     const terminateBtn = document.getElementById('terminateBtn');
+                    const msgEl = document.getElementById('statusMessage');
                     
                     if (data.is_running) {
                         // User's job is running or queued
@@ -489,6 +522,12 @@ DASHBOARD_TEMPLATE = """
                         runBtn.textContent = '⏳ Agent is Running...';
                         runBtn.classList.add('running');
                         terminateBtn.classList.add('show');
+                        
+                        if (data.queue_len > 0) {
+                             msgEl.textContent = `📋 You are in queue (position ${data.queue_len}).`;
+                        } else {
+                             msgEl.textContent = "🔄 Job is running in background. Please check your email for results when complete.";
+                        }
                     } else if (data.is_locked_for_another_user) {
                         // Server is locked but not for this user
                         statusEl.textContent = '⏳ Running (for another user)';
@@ -497,6 +536,8 @@ DASHBOARD_TEMPLATE = """
                         runBtn.textContent = '🚀 Run PhD Agent Now (will queue)';
                         runBtn.classList.remove('running');
                         terminateBtn.classList.remove('show');
+                        
+                        msgEl.textContent = `ℹ️ Server is busy with another user's request. Your job will be queued.`;
                     } else {
                         // Server is completely idle
                         statusEl.textContent = '✅ Idle';
@@ -505,6 +546,10 @@ DASHBOARD_TEMPLATE = """
                         runBtn.textContent = '🚀 Run PhD Agent Now';
                         runBtn.classList.remove('running');
                         terminateBtn.classList.remove('show');
+                        
+                        if (msgEl.textContent.includes('Running')) {
+                            msgEl.textContent = "✅ Ready for new job.";
+                        }
                     }
                     
                     document.getElementById('lastRun').textContent = data.last_run || 'Never';
@@ -532,14 +577,8 @@ DASHBOARD_TEMPLATE = """
                 return;
             }
             
-            if (recipientEmail && !recipientEmail.includes('@')) {
-                alert('Please enter a valid email address');
-                return;
-            }
-            
             document.getElementById('runBtn').disabled = true;
-            const posLabel = positionType === 'phd' ? 'PhD' : 'PostDoc/Tenure';
-            document.getElementById('logOutput').textContent = 'Starting ' + posLabel + ' Position Search...';
+            document.getElementById('statusMessage').textContent = '🚀 Submitting request...';
             
             fetch('/run', { 
                 method: 'POST',
@@ -552,7 +591,7 @@ DASHBOARD_TEMPLATE = """
             })
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('logOutput').textContent = data.message;
+                    document.getElementById('statusMessage').textContent = data.message;
                     updateStatus();
                 });
         }
@@ -562,12 +601,12 @@ DASHBOARD_TEMPLATE = """
                 return;
             }
             
-            document.getElementById('logOutput').textContent = 'Terminating job...';
+            document.getElementById('statusMessage').textContent = '🛑 Terminating job...';
             
             fetch('/terminate', { method: 'POST' })
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('logOutput').textContent = data.message;
+                    document.getElementById('statusMessage').textContent = data.message;
                     updateStatus();
                 });
         }
