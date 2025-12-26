@@ -546,10 +546,29 @@ class DeepUniversityCrawler(BaseScraper):
         
         # URL patterns to skip
         self.skip_patterns = [
-            '.pdf', '.doc', '.ppt', '.xls', '.zip', '.png', '.jpg', '.gif',
-            'mailto:', 'javascript:', 'tel:', '#', 'facebook.com', 'twitter.com',
-            'linkedin.com', 'youtube.com', 'instagram.com', 'login', 'logout',
-            'impressum', 'datenschutz', 'privacy', 'cookie', 'legal'
+            # File types
+            '.pdf', '.doc', '.ppt', '.xls', '.zip', '.png', '.jpg', '.gif', '.svg',
+            # Protocols and external
+            'mailto:', 'javascript:', 'tel:', '#', 
+            'facebook.com', 'twitter.com', 'linkedin.com', 'youtube.com', 'instagram.com',
+            # Auth/admin
+            'login', 'logout', 'admin', 'dashboard',
+            # Legal/info pages
+            'impressum', 'datenschutz', 'privacy', 'cookie', 'legal', 'terms',
+            # Mailing lists (NEW - addresses user's issue)
+            'postorius', 'mailman', 'listserv', '/lists/', 'list.', 'subscribe', 'unsubscribe',
+            'mailing-list', 'mailinglist', 'listinfo', 'mailarchive',
+            # Generic/portal pages (NEW)
+            '/about/', '/contact/', '/faq/', '/help/', '/services/', '/service/',
+            '/overview/', '/general/', '/info/', '/information/',
+            # Calendars/events (not job postings)
+            '/calendar/', '/events/', '/event/', '/termine/', '/veranstaltung',
+            # Downloads/resources
+            '/downloads/', '/download/', '/resources/', '/media/', '/files/',
+            # Navigation/structure pages
+            '/sitemap/', '/search/', '/archive/', '/tag/', '/category/',
+            # Social/community (not job pages)
+            '/forum/', '/blog/', '/news/', '/press/', '/newsletter/'
         ]
 
     def _is_valid_url(self, url, base_domain):
@@ -618,6 +637,28 @@ class DeepUniversityCrawler(BaseScraper):
             # Get page text content
             page_text = await page.evaluate('() => document.body.innerText.toLowerCase()')
             page_title = await page.title()
+            
+            # CRITICAL: Detect and skip mailing list pages
+            mailing_list_indicators = [
+                'mailing list', 'subscribe', 'unsubscribe', 'list archive',
+                'postorius', 'mailman', 'listserv', 'email list',
+                'discussion list', 'list info', 'list management'
+            ]
+            if any(indicator in page_text for indicator in mailing_list_indicators):
+                return found_positions  # Skip mailing list pages
+            
+            # CRITICAL: Detect and skip generic info/portal pages
+            generic_page_indicators = [
+                'doctoral academy overview', 'about our program', 'general information',
+                'program structure', 'how to apply in general', 'overview of opportunities',
+                'list of departments', 'our research areas'
+            ]
+            # Only skip if page has generic indicators AND lacks job-specific keywords
+            has_generic = any(indicator in page_text for indicator in generic_page_indicators)
+            has_job_keywords = any(kw in page_text for kw in ['apply now', 'deadline', 'position open', 'vacancy', 'we are hiring'])
+            
+            if has_generic and not has_job_keywords:
+                return found_positions  # Skip generic info pages without job postings
             
             # Check if page mentions PhD keywords
             has_phd_mention = False
