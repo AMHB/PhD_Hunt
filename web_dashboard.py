@@ -479,17 +479,26 @@ DASHBOARD_TEMPLATE = """
                 .then(data => {
                     const statusEl = document.getElementById('status');
                     const runBtn = document.getElementById('runBtn');
-                    
                     const terminateBtn = document.getElementById('terminateBtn');
                     
                     if (data.is_running) {
+                        // User's job is running or queued
                         statusEl.textContent = '⏳ Running...';
                         statusEl.className = 'status-value status-running';
                         runBtn.disabled = true;
                         runBtn.textContent = '⏳ Agent is Running...';
                         runBtn.classList.add('running');
                         terminateBtn.classList.add('show');
+                    } else if (data.is_locked_for_another_user) {
+                        // Server is locked but not for this user
+                        statusEl.textContent = '⏳ Running (for another user)';
+                        statusEl.className = 'status-value status-running';
+                        runBtn.disabled = false;
+                        runBtn.textContent = '🚀 Run PhD Agent Now (will queue)';
+                        runBtn.classList.remove('running');
+                        terminateBtn.classList.remove('show');
                     } else {
+                        // Server is completely idle
                         statusEl.textContent = '✅ Idle';
                         statusEl.className = 'status-value status-idle';
                         runBtn.disabled = false;
@@ -818,31 +827,43 @@ def status():
                 })
             else:
                 # Job completed
+                # BUT check if server is now running for someone else
+                is_server_locked = is_locked()
+                run_info = get_lock_info() if is_server_locked else None
+                queue_len = get_queue_length() if is_server_locked else 0
+                
                 return jsonify({
                     "is_running": False,
+                    "is_locked_for_another_user": is_server_locked,
                     "last_run": job_status.get("started_at"),
                     "last_result": job_status.get("result"),
-                    "log_output": job_status.get("log_output", "")
+                    "log_output": job_status.get("log_output", ""),
+                    "queue_len": queue_len
                 })
     
-    # No active job for this user
+    # No active job for this user - check if server is locked
     if is_locked():
         lock_info = get_lock_info()
         queue_len = get_queue_length()
+        
+        # Server is running for another user
         return jsonify({
             "is_running": False,
+            "is_locked_for_another_user": True,
             "last_run": None,
             "last_result": None,
-            "log_output": f"ℹ️ Server is currently busy with another request.\n"
-                          f"Current queue length: {queue_len}\n\n"
-                          f"You can submit a new request - it will be queued."
+            "log_output": f"ℹ️ Server is currently running for another user.\n"
+                          f"Queue length: {queue_len}\n\n"
+                          f"You can submit a new request - it will be queued and run automatically."
         })
     
+    # Server is completely idle
     return jsonify({
         "is_running": False,
+        "is_locked_for_another_user": False,
         "last_run": None,
         "last_result": None,
-        "log_output": "Ready to run. Enter keywords and click the button."
+        "log_output": "✅ Server is ready. Enter keywords and email, then click 'Run PhD Agent Now'."
     })
 
 @app.route('/run', methods=['POST'])
