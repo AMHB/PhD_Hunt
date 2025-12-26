@@ -841,11 +841,23 @@ def status():
                     "queue_len": queue_len
                 })
     
-    # No active job for this user - check if server is locked
+    # No active job in memory - check if server is locked
     if is_locked():
         lock_info = get_lock_info()
         queue_len = get_queue_length()
         
+        # KEY FIX: Check if the lock belongs to the current user!
+        if lock_info and lock_info.get("user") == username:
+            # It's OUR job running! Recover the state.
+            return jsonify({
+                "is_running": True,
+                "last_run": lock_info.get("started_at_str"),
+                "last_result": None,
+                "log_output": "🔄 Resumed session. job is running in background...\n" + \
+                              f"Started at: {lock_info.get('started_at_str')}\n" + \
+                              "Please check your email for results when complete."
+            })
+            
         # Server is running for another user
         return jsonify({
             "is_running": False,
