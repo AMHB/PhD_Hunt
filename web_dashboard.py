@@ -480,6 +480,9 @@ DASHBOARD_TEMPLATE = """
             <div class="status-item">
                 <span class="status-label">Status:</span>
                 <span id="status" class="status-value status-idle">Idle</span>
+                <span id="jobTimerBadge" class="badge bg-info text-dark" style="display: none; margin-left: 10px; font-family: monospace; background-color: #0dcaf0; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">
+                    ⏱️ <span id="jobTimer">00:00:00</span>
+                </span>
             </div>
             <div class="status-item">
                 <span class="status-label">Last Run:</span>
@@ -505,6 +508,13 @@ DASHBOARD_TEMPLATE = """
     </div>
 
     <script>
+        function formatTimeDuration(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return [h, m, s].map(v => v < 10 ? "0" + v : v).join(":");
+        }
+
         function updateStatus() {
             fetch('/status')
                 .then(res => res.json())
@@ -513,6 +523,7 @@ DASHBOARD_TEMPLATE = """
                     const runBtn = document.getElementById('runBtn');
                     const terminateBtn = document.getElementById('terminateBtn');
                     const msgEl = document.getElementById('statusMessage');
+                    const jobTimerBadge = document.getElementById('jobTimerBadge');
                     
                     if (data.is_running) {
                         // User's job is running or queued
@@ -522,6 +533,31 @@ DASHBOARD_TEMPLATE = """
                         runBtn.textContent = '⏳ Agent is Running...';
                         runBtn.classList.add('running');
                         terminateBtn.classList.add('show');
+                        
+                        // Update Timer
+                        if ((data.started_at_ts || data.last_run) && !data.is_locked_for_another_user) {
+                            try {
+                                let diffSec;
+                                if (data.started_at_ts) {
+                                    // Use Unix timestamp (timezone-safe) - preferred method
+                                    const nowSec = Math.floor(Date.now() / 1000);
+                                    diffSec = Math.max(0, nowSec - data.started_at_ts);
+                                } else {
+                                    // Fallback: Parse date string for jobs started before timestamp was added
+                                    const startTime = new Date(data.last_run.replace(" ", "T"));
+                                    const now = new Date();
+                                    const diffMs = now - startTime;
+                                    diffSec = Math.max(0, Math.floor(diffMs / 1000));
+                                }
+                                document.getElementById('jobTimer').textContent = formatTimeDuration(diffSec);
+                                jobTimerBadge.style.display = 'inline-block';
+                            } catch (e) {
+                                console.error("Timer calculation error", e);
+                                jobTimerBadge.style.display = 'none';
+                            }
+                        } else {
+                            jobTimerBadge.style.display = 'none';
+                        }
                         
                         if (data.queue_len > 0) {
                              msgEl.textContent = `📋 You are in queue (position ${data.queue_len}).`;
@@ -546,6 +582,7 @@ DASHBOARD_TEMPLATE = """
                         runBtn.textContent = '🚀 Run PhD Agent Now';
                         runBtn.classList.remove('running');
                         terminateBtn.classList.remove('show');
+                        jobTimerBadge.style.display = 'none';
                         
                         if (msgEl.textContent.includes('Running')) {
                             msgEl.textContent = "✅ Ready for new job.";
@@ -772,8 +809,8 @@ def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, usern
     try:
         pos_label = "PhD" if position_type == "phd" else "PostDoc/Tenure"
         
-        # Build command
-        cmd = ["python3", "main.py", "--job-id", job_id, "--position-type", position_type]
+        # Build command (use venv Python to access all dependencies)
+        cmd = ["/root/phd_agent/venv/bin/python3", "main.py", "--job-id", job_id, "--position-type", position_type]
         if recipient_email:
             cmd.extend(["--recipient", recipient_email])
         if keywords:
@@ -854,6 +891,7 @@ def status():
                 return jsonify({
                     "is_running": True,
                     "last_run": job_status.get("started_at"),
+                    "started_at_ts": job_status.get("started_at_ts"),
                     "last_result": None,
                     "log_output": job_status.get("log_output", "")
                 })
