@@ -1,17 +1,30 @@
 #!/bin/bash
-# Cron job script to run PhD Agent daily
-# Add to crontab: 0 8 * * * /home/ubuntu/phd_agent/run_daily.sh
 
-cd /home/ubuntu/phd_agent
+# Cron Wrapper Script for PhD Hunt Agent
+# Ensures correct environment and logging
+
+# Absolute paths
+cd /root/phd_agent || exit 1
+
+# Load Python environment
 source venv/bin/activate
 
-# Run with virtual display (headless servers need this for Playwright)
-export DISPLAY=:99
-Xvfb :99 -screen 0 1280x720x24 &
-XVFB_PID=$!
+# Use specific log file
+LOGFILE="/root/phd_agent/logs/cron.log"
 
-# Run the agent
-python3 main.py >> /home/ubuntu/phd_agent/logs/phd_agent.log 2>&1
+echo "==========================================" >> "$LOGFILE"
+echo "📆 Starting Daily Run: $(date)" >> "$LOGFILE"
 
-# Cleanup
-kill $XVFB_PID 2>/dev/null
+# Run the python script
+# Mode 1 (default) - uses strict filters from utils.py
+python3 main.py >> "$LOGFILE" 2>&1
+
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "✅ finished successfully: $(date)" >> "$LOGFILE"
+else
+    echo "❌ finished with error (code $EXIT_CODE): $(date)" >> "$LOGFILE"
+fi
+
+echo "==========================================" >> "$LOGFILE"

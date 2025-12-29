@@ -1,0 +1,17 @@
+[Unit]
+Description=PhD Headhunter Dashboard
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/phd_agent
+ExecStart=/root/phd_agent/venv/bin/python3 /root/phd_agent/web_dashboard.py
+Restart=always
+RestartSec=5
+EnvironmentFile=/root/phd_agent/.env
+# Output to syslog, viewable via journalctl -u phd_dashboard
+StandardOutput=append:/root/phd_agent/logs/web_dashboard.log
+StandardError=append:/root/phd_agent/logs/web_dashboard.log
+
+[Install]
+WantedBy=multi-user.target
