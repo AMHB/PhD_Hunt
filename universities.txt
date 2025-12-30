@@ -148,14 +148,26 @@ jku.at
 uibk.ac.at
 
 # === NORDIC COUNTRIES ===
+# Sweden
 kth.se
 chalmers.se
 lth.se
+lunduniversity.lu.se
+liu.se
+# Finland
 aalto.fi
 oulu.fi
+# Norway
 ntnu.no
+uio.no
+# Denmark
 dtu.dk
 ku.dk
+
+# === IRELAND ===
+tcd.ie
+dcu.ie
+connectcentre.ie
 
 # === NETHERLANDS ===
 tudelft.nl

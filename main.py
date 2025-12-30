@@ -11,6 +11,7 @@ from analyzer import KeywordAnalyzer
 from utils import StateManager, EmailSender, is_phd_only, is_postdoc_only
 from linkedin_scraper import LinkedInScraper
 from llm_verifier import batch_verify_jobs
+from link_validator import validate_links_batch
 from dotenv import load_dotenv
 import smtplib
 from email.mime.text import MIMEText
@@ -181,8 +182,22 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd"):
         
         await browser.close()
     
-    # 3. LLM Verification - Filter invalid/duplicate jobs with ChatGPT
-    print(f"\n📊 Total jobs found (before verification): {len(all_found_jobs)}")
+    # 3. Link Validation - Filter out broken/dead links BEFORE LLM verification
+    print(f"\n📊 Total jobs found (before validation): {len(all_found_jobs)}")
+    
+    if all_found_jobs:
+        print("\n🔗 Validating links to filter broken URLs...")
+        try:
+            valid_jobs = await validate_links_batch(all_found_jobs, max_workers=15)
+            print(f"✅ After link validation: {len(valid_jobs)} have valid links")
+            print(f"🗑️  Removed: {len(all_found_jobs) - len(valid_jobs)} broken/dead links")
+            all_found_jobs = valid_jobs
+        except Exception as e:
+            print(f"⚠️ Link validation failed: {str(e)}")
+            print("   Proceeding with unvalidated links...")
+    
+    # 4. LLM Verification - Filter invalid/duplicate jobs with ChatGPT
+    print(f"\n📊 Jobs for LLM verification: {len(all_found_jobs)}")
     
     if all_found_jobs:
         print("\n🤖 Running LLM verification (ChatGPT filtering)...")
