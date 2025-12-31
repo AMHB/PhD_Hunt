@@ -325,7 +325,7 @@ DASHBOARD_TEMPLATE = """
             -webkit-backdrop-filter: blur(30px) saturate(180%);
             border-radius: 24px;
             padding: 48px;
-            max-width: 650px;
+            max-width: 1000px;
             width: 100%;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6),
                         inset 0 1px 0 rgba(255, 255, 255, 0.1);
