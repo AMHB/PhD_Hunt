@@ -469,6 +469,7 @@ DASHBOARD_TEMPLATE = """
                 </select>
                 <p class="input-hint">Select the type of academic position to search for</p>
             </div>
+            <div class="input-group">
                 <label>🔍 I would like you to find:</label>
                 <div style="margin-top: 10px;">
                     <label style="display: flex; align-items: flex-start; margin-bottom: 10px; cursor: pointer;">
