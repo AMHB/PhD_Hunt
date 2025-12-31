@@ -471,18 +471,18 @@ DASHBOARD_TEMPLATE = """
             </div>
             <div class="input-group">
                 <label>🔍 I would like you to find:</label>
-                <div style="margin-top: 10px;">
-                    <label style="display: flex; align-items: flex-start; margin-bottom: 10px; cursor: pointer;">
-                        <input type="checkbox" id="searchOpen" checked style="margin-right: 10px; cursor: pointer; flex-shrink: 0; margin-top: 2px;" />
-                        <span><strong>1. Open PhD/PostDoc Positions</strong> (Job Portals)</span>
+                <div style="margin-top: 12px;">
+                    <label style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 12px 16px; cursor: pointer; border-radius: 10px; background: rgba(102, 126, 234, 0.05); border: 1px solid rgba(102, 126, 234, 0.15); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(102, 126, 234, 0.1)'" onmouseout="this.style.background='rgba(102, 126, 234, 0.05)'">
+                        <input type="checkbox" id="searchOpen" checked style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: #667eea;" />
+                        <span style="line-height: 1.4;"><strong>1. Open PhD/PostDoc Positions</strong> (Job Portals)</span>
                     </label>
-                    <label style="display: flex; align-items: flex-start; margin-bottom: 10px; cursor: pointer;">
-                        <input type="checkbox" id="searchInquiry" style="margin-right: 10px; cursor: pointer; flex-shrink: 0; margin-top: 2px;" />
-                        <span><strong>2. Possible PhD/PostDoc Inquiry Positions</strong> (Faculty Pages)</span>
+                    <label style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 12px 16px; cursor: pointer; border-radius: 10px; background: rgba(102, 126, 234, 0.05); border: 1px solid rgba(102, 126, 234, 0.15); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(102, 126, 234, 0.1)'" onmouseout="this.style.background='rgba(102, 126, 234, 0.05)'">
+                        <input type="checkbox" id="searchInquiry" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: #667eea;" />
+                        <span style="line-height: 1.4;"><strong>2. Possible PhD/PostDoc Inquiry Positions</strong> (Faculty Pages)</span>
                     </label>
-                    <label style="display: flex; align-items: flex-start; margin-bottom: 10px; cursor: pointer;">
-                        <input type="checkbox" id="searchProfessors" style="margin-right: 10px; cursor: pointer; flex-shrink: 0; margin-top: 2px;" />
-                        <span><strong>3. Professors/Supervisors in Your Field</strong></span>
+                    <label style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 12px 16px; cursor: pointer; border-radius: 10px; background: rgba(102, 126, 234, 0.05); border: 1px solid rgba(102, 126, 234, 0.15); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(102, 126, 234, 0.1)'" onmouseout="this.style.background='rgba(102, 126, 234, 0.05)'">
+                        <input type="checkbox" id="searchProfessors" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: #667eea;" />
+                        <span style="line-height: 1.4;"><strong>3. Professors/Supervisors in Your Field</strong></span>
                     </label>
                 </div>
                 <p class="input-hint">Select at least one search type</p>
