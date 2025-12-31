@@ -472,17 +472,17 @@ DASHBOARD_TEMPLATE = """
             <div class="input-group">
                 <label>🔍 I would like you to find:</label>
                 <div style="margin-top: 10px;">
-                    <label style="display: block; margin-bottom: 8px; cursor: pointer;">
-                        <input type="checkbox" id="searchOpen" checked style="margin-right: 8px; cursor: pointer;" />
-                        <strong>1. Open PhD/PostDoc Positions</strong> (Job Portals)
+                    <label style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer;">
+                        <input type="checkbox" id="searchOpen" checked style="margin-right: 10px; cursor: pointer; flex-shrink: 0;" />
+                        <span><strong>1. Open PhD/PostDoc Positions</strong> (Job Portals)</span>
                     </label>
-                    <label style="display: block; margin-bottom: 8px; cursor: pointer;">
-                        <input type="checkbox" id="searchInquiry" style="margin-right: 8px; cursor: pointer;" />
-                        <strong>2. Possible PhD/PostDoc Inquiry Positions</strong> (Faculty Pages)
+                    <label style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer;">
+                        <input type="checkbox" id="searchInquiry" style="margin-right: 10px; cursor: pointer; flex-shrink: 0;" />
+                        <span><strong>2. Possible PhD/PostDoc Inquiry Positions</strong> (Faculty Pages)</span>
                     </label>
-                    <label style="display: block; margin-bottom: 8px; cursor: pointer;">
-                        <input type="checkbox" id="searchProfessors" style="margin-right: 8px; cursor: pointer;" />
-                        <strong>3. Professors/Supervisors in Your Field</strong>
+                    <label style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer;">
+                        <input type="checkbox" id="searchProfessors" style="margin-right: 10px; cursor: pointer; flex-shrink: 0;" />
+                        <span><strong>3. Professors/Supervisors in Your Field</strong></span>
                     </label>
                 </div>
                 <p class="input-hint">Select at least one search type</p>
