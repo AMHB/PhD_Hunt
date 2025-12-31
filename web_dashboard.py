@@ -470,6 +470,24 @@ DASHBOARD_TEMPLATE = """
                 <p class="input-hint">Select the type of academic position to search for</p>
             </div>
             <div class="input-group">
+                <label>🔍 I would like you to find:</label>
+                <div style="margin-top: 10px;">
+                    <label style="display: block; margin-bottom: 8px; cursor: pointer;">
+                        <input type="checkbox" id="searchOpen" checked style="margin-right: 8px; cursor: pointer;" />
+                        <strong>1. Open PhD/PostDoc Positions</strong> (Job Portals)
+                    </label>
+                    <label style="display: block; margin-bottom: 8px; cursor: pointer;">
+                        <input type="checkbox" id="searchInquiry" style="margin-right: 8px; cursor: pointer;" />
+                        <strong>2. Possible PhD/PostDoc Inquiry Positions</strong> (Faculty Pages)
+                    </label>
+                    <label style="display: block; margin-bottom: 8px; cursor: pointer;">
+                        <input type="checkbox" id="searchProfessors" style="margin-right: 8px; cursor: pointer;" />
+                        <strong>3. Professors/Supervisors in Your Field</strong>
+                    </label>
+                </div>
+                <p class="input-hint">Select at least one search type</p>
+            </div>
+            <div class="input-group">
                 <label for="recipientEmail">📧 Send Results To (Email) <span style="color: red;">*</span></label>
                 <input type="email" id="recipientEmail" placeholder="e.g., yourname@gmail.com" required>
                 <p class="input-hint">Required: Enter a valid email address</p>
@@ -600,6 +618,12 @@ DASHBOARD_TEMPLATE = """
             const recipientEmail = document.getElementById('recipientEmail').value.trim();
             const positionType = document.getElementById('positionType').value;
             
+            // Get search types
+            const searchTypes = [];
+            if (document.getElementById('searchOpen').checked) searchTypes.push('open');
+            if (document.getElementById('searchInquiry').checked) searchTypes.push('inquiry');
+            if (document.getElementById('searchProfessors').checked) searchTypes.push('professors');
+            
             // Validate required fields
             if (!keywords) {
                 alert('⚠️ Please enter search keywords!');
@@ -613,6 +637,10 @@ DASHBOARD_TEMPLATE = """
                 alert('⚠️ Please enter a valid email address!');
                 return;
             }
+            if (searchTypes.length === 0) {
+                alert('⚠️ Please select at least one search type!');
+                return;
+            }
             
             document.getElementById('runBtn').disabled = true;
             document.getElementById('statusMessage').textContent = '🚀 Submitting request...';
@@ -623,7 +651,8 @@ DASHBOARD_TEMPLATE = """
                 body: JSON.stringify({ 
                     keywords: keywords, 
                     recipient_email: recipientEmail,
-                    position_type: positionType 
+                    position_type: positionType,
+                    search_types: searchTypes.join(',')  // NEW: Send search types
                 })
             })
                 .then(res => res.json())
@@ -803,14 +832,14 @@ user_jobs = {}  # {username: job_id}
 current_process = None
 current_process_lock = threading.Lock()
 
-def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, username: str, position_type: str = "phd"):
+def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, username: str, position_type: str = "phd", search_types: str = "open"):
     """Run the PhD agent for a queued job"""
     global current_process
     try:
         pos_label = "PhD" if position_type == "phd" else "PostDoc/Tenure"
         
         # Build command (use venv Python to access all dependencies)
-        cmd = ["/root/phd_agent/venv/bin/python3", "main.py", "--job-id", job_id, "--position-type", position_type]
+        cmd = ["/root/phd_agent/venv/bin/python3", "main.py", "--job-id", job_id, "--position-type", position_type, "--search-types", search_types]
         if recipient_email:
             cmd.extend(["--recipient", recipient_email])
         if keywords:
@@ -868,7 +897,7 @@ def process_queue():
         update_job_log(job_id, "\n🚀 Your turn! Starting job from queue...\n")
         thread = threading.Thread(
             target=run_agent_with_queue, 
-            args=(job_id, next_job["keywords"], next_job["recipient"], next_job["user"])
+            args=(job_id, next_job["keywords"], next_job["recipient"], next_job["user"], "phd", "open")  # TODO: Store search_types in queue
         )
         thread.daemon = True
         thread.start()
@@ -967,6 +996,7 @@ def run():
     keywords = data.get("keywords", "")
     recipient_email = data.get("recipient_email", "")
     position_type = data.get("position_type", "phd")  # Default to PhD
+    search_types = data.get("search_types", "open")  # Default to open positions
     
     # Create a new job
     job_id = create_job_status(
@@ -1003,7 +1033,7 @@ def run():
     # Start immediately
     thread = threading.Thread(
         target=run_agent_with_queue, 
-        args=(job_id, keywords, recipient_email, username, position_type)
+        args=(job_id, keywords, recipient_email, username, position_type, search_types)
     )
     thread.daemon = True
     thread.start()

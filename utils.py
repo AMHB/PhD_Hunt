@@ -308,14 +308,46 @@ class EmailSender:
                     font-weight: bold;
                 }
                 .apply-btn:hover { background-color: #45a049; }
+                .contact-btn {
+                    background-color: #FF9800;
+                    color: white !important;
+                    padding: 8px 16px;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    display: inline-block;
+                    font-weight: bold;
+                }
+                .contact-btn:hover { background-color: #F57C00; }
                 a { color: #2196F3; }
+                .section-divider { 
+                    margin: 30px 0; 
+                    border-top: 3px solid #E0E0E0; 
+                    padding-top: 20px;
+                }
+                .inquiry-badge {
+                    background-color: #FF9800;
+                    color: white;
+                    padding: 3px 8px;
+                    border-radius: 3px;
+                    font-size: 0.8em;
+                    font-weight: bold;
+                }
+                .professor-table th { background-color: #9C27B0; }
             </style>
         </head>
         <body>
-            <h2>🎓 Daily PhD Search Report - {{ date }}</h2>
+            <h2>🎓 PhD Search Report - {{ date }}</h2>
             
             <div class="summary">
-                <strong>Summary:</strong> {{ new_jobs|length }} new positions | {{ old_jobs|length }} previously discovered (still active)
+                <strong>Summary:</strong> 
+                {{ new_jobs|length }} new positions | 
+                {{ old_jobs|length }} previously discovered (still active)
+                {% if inquiry_positions %}
+                | {{ inquiry_positions|length }} inquiry opportunities
+                {% endif %}
+                {% if professors %}
+                | {{ professors|length }} professors in your field
+                {% endif %}
             </div>
             
             <h3>🆕 Newly Discovered Positions</h3>
@@ -340,6 +372,65 @@ class EmailSender:
             <p>No new positions found today.</p>
             {% endif %}
 
+            {% if inquiry_positions %}
+            <div class="section-divider"></div>
+            <h3>💡 Possible PhD/PostDoc Inquiry Positions</h3>
+            <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                These professors/research groups have indicated openness to accepting new students on their webpages.
+                <span class="inquiry-badge">INQUIRY OPPORTUNITY</span>
+            </p>
+            <table>
+                <tr>
+                    <th>Professor/Lab</th>
+                    <th>University</th>
+                    <th>Country</th>
+                    <th>Research Areas</th>
+                    <th>Contact</th>
+                </tr>
+                {% for inquiry in inquiry_positions %}
+                <tr>
+                    <td><strong>{{ inquiry.professor }}</strong></td>
+                    <td>{{ inquiry.university }}</td>
+                    <td>{{ inquiry.country }}</td>
+                    <td>{{ inquiry.research_areas[:80] }}{% if inquiry.research_areas|length > 80 %}...{% endif %}</td>
+                    <td>
+                        {% if inquiry.url %}<a href="{{ inquiry.url }}" class="contact-btn">View Page →</a>{% endif %}
+                        {% if inquiry.email and inquiry.email != 'N/A' %}<br><small>{{ inquiry.email }}</small>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% endif %}
+
+            {% if professors %}
+            <div class="section-divider"></div>
+            <h3>👨‍🔬 Professors/Supervisors in Your Field</h3>
+            <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                Faculty members whose research interests match your keywords. Consider reaching out to explore potential opportunities.
+            </p>
+            <table class="professor-table">
+                <tr>
+                    <th>Professor Name</th>
+                    <th>University</th>
+                    <th>Country</th>
+                    <th>Research Areas</th>
+                    <th>Webpage</th>
+                </tr>
+                {% for prof in professors %}
+                <tr>
+                    <td><strong>{{ prof.name }}</strong><br><small>{{ prof.title }}</small></td>
+                    <td>{{ prof.university }}</td>
+                    <td>{{ prof.country }}</td>
+                    <td>{{ prof.research_areas[:100] }}{% if prof.research_areas|length > 100 %}...{% endif %}</td>
+                    <td>
+                        {% if prof.url %}<a href="{{ prof.url }}" target="_blank">Visit →</a>{% else %}N/A{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% endif %}
+
+            <div class="section-divider"></div>
             <h3>📂 Previously Discovered Open Positions (Still Active)</h3>
             {% if old_jobs %}
             <table>
@@ -371,16 +462,29 @@ class EmailSender:
         </html>
         """
 
-    def send_email(self, recipient_email, new_jobs, old_jobs):
+    def send_email(self, recipient_email, new_jobs, old_jobs, inquiry_positions=None, professors=None):
         today = datetime.now().strftime("%Y-%m-%d")
         
         t = Template(self.template)
-        html_content = t.render(date=today, new_jobs=new_jobs, old_jobs=old_jobs)
+        html_content = t.render(
+            date=today, 
+            new_jobs=new_jobs, 
+            old_jobs=old_jobs,
+            inquiry_positions=inquiry_positions or [],
+            professors=professors or []
+        )
 
+        # Updated subject line to reflect content
+        subject_parts = [f"{len(new_jobs)} new positions"]
+        if inquiry_positions:
+            subject_parts.append(f"{len(inquiry_positions)} inquiries")
+        if professors:
+            subject_parts.append(f"{len(professors)} professors")
+        
         msg = MIMEMultipart()
         msg["From"] = self.sender_email
         msg["To"] = recipient_email
-        msg["Subject"] = f"🎓 PhD Search Report - {today} ({len(new_jobs)} new positions)"
+        msg["Subject"] = f"🎓 PhD Search Report - {today} ({', '.join(subject_parts)})"
         
         msg.attach(MIMEText(html_content, "html"))
 

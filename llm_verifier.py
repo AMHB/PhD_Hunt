@@ -103,6 +103,100 @@ If ALL jobs are invalid, respond with: []
         return unique_jobs
 
 
+def verify_job_history(jobs: List[Dict], keywords: str, relevance_threshold: int = 5) -> List[Dict]:
+    """
+    Re-verify previously discovered jobs for continued relevance.
+    Uses LLM to score each job on relevance (0-10 scale) and filter out low-scoring items.
+    
+    Args:
+        jobs: List of previously found job dictionaries
+        keywords: Current search keywords
+        relevance_threshold: Minimum score (0-10) to keep job (default: 5)
+    
+    Returns:
+        List of jobs scoring above threshold
+    """
+    if not jobs:
+        return []
+    
+    print(f"\n🔍 Re-verifying {len(jobs)} previously discovered positions for relevance...")
+    
+    # Prepare jobs for relevance scoring
+    jobs_text = "\n\n".join([
+        f"Job {i+1}:\n"
+        f"Title: {job.get('title', 'N/A')}\n"
+        f"Institution: {job.get('university', job.get('institution', 'N/A'))}\n"
+        f"Found Date: {job.get('found_date', 'Unknown')}\n"
+        f"URL: {job.get('url', 'N/A')}"
+        for i, job in enumerate(jobs)
+    ])
+    
+    prompt = f"""You are a PhD job listing relevance evaluator. Score each of these previously discovered positions on relevance to the current search.
+
+Current search keywords: {keywords}
+
+Scoring criteria (0-10 scale):
+- 9-10: Highly relevant, specific position matching keywords perfectly
+- 7-8: Very relevant, matches most keywords
+- 5-6: Moderately relevant, matches some keywords
+- 3-4: Weakly relevant, tangentially related
+- 0-2: Not relevant, wrong field or generic posting
+
+Red flags (automatically score ≤4):
+- Generic titles: "PhD Positions", "Open Positions", "Join Our Team"
+- URLs to general career pages (not specific postings)
+- Completely unrelated to keywords
+- Titles suggesting non-PhD positions (postdoc, professor, engineer, technician)
+
+Jobs to score:
+{jobs_text}
+
+Respond ONLY with a JSON array of scores (0-10) in order. Example: [8, 3, 9, 2, 7]
+Array must have exactly {len(jobs)} scores.
+"""
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a precise job relevance scorer. Respond only with valid JSON arrays of integers."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=200
+        )
+        
+        # Parse response
+        result_text = response.choices[0].message.content.strip()
+        
+        # Extract JSON array
+        import json
+        scores = json.loads(result_text)
+        
+        if len(scores) != len(jobs):
+            print(f"⚠️ Score array length mismatch. Expected {len(jobs)}, got {len(scores)}")
+            return jobs  # Return all if scoring failed
+        
+        # Filter jobs by relevance threshold
+        relevant_jobs = []
+        filtered_count = 0
+        
+        for job, score in zip(jobs, scores):
+            if score >= relevance_threshold:
+                relevant_jobs.append(job)
+            else:
+                filtered_count += 1
+                print(f"  ❌ Filtered (score {score}/10): {job.get('title', 'Unknown')[:60]}")
+        
+        print(f"✅ Relevance verification complete: {len(relevant_jobs)} relevant, {filtered_count} filtered")
+        return relevant_jobs
+        
+    except Exception as e:
+        print(f"⚠️ LLM relevance scoring failed: {str(e)}")
+        print("Returning all jobs without filtering...")
+        return jobs
+
+
 def batch_verify_jobs(jobs: List[Dict], keywords: str, batch_size: int = 20) -> List[Dict]:
     """
     Verify jobs in batches to handle large lists.
