@@ -572,7 +572,8 @@ DASHBOARD_TEMPLATE = """
                                     diffSec = Math.max(0, nowSec - data.started_at_ts);
                                 } else {
                                     // Fallback: Parse date string for jobs started before timestamp was added
-                                    const startTime = new Date(data.last_run.replace(" ", "T"));
+                                    // Server sends UTC time, so append 'Z' to parse as UTC
+                                    const startTime = new Date(data.last_run.replace(" ", "T") + "Z");
                                     const now = new Date();
                                     const diffMs = now - startTime;
                                     diffSec = Math.max(0, Math.floor(diffMs / 1000));
