@@ -667,9 +667,8 @@ DASHBOARD_TEMPLATE = """
                     keywords: keywords, 
                     recipient_email: recipientEmail,
                     position_type: positionType,
-                    position_type: positionType,
-                    search_types: searchTypes.join(','),
                     use_ai_crawler: document.getElementById('aiPowered').checked
+                })
             })
                 .then(res => res.json())
                 .then(data => {
