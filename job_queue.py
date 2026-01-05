@@ -113,7 +113,7 @@ def save_queue(queue: List[Dict]):
         with open(QUEUE_FILE, "w") as f:
             json.dump(queue, f, indent=2)
 
-def add_to_queue(user: str, keywords: str, recipient: str) -> str:
+def add_to_queue(user: str, keywords: str, recipient: str, position_type: str = "phd", search_types: str = "open", use_ai_crawler: bool = False) -> str:
     """
     Add a job to the queue.
     Returns job_id for tracking.
@@ -124,6 +124,9 @@ def add_to_queue(user: str, keywords: str, recipient: str) -> str:
         "user": user,
         "keywords": keywords,
         "recipient": recipient,
+        "position_type": position_type,
+        "search_types": search_types,
+        "use_ai_crawler": use_ai_crawler,
         "status": "queued",
         "queued_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "queued_at_ts": time.time()

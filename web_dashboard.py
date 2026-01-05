@@ -494,6 +494,10 @@ DASHBOARD_TEMPLATE = """
                         <input type="checkbox" id="searchProfessors" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: #667eea;" />
                         <span style="line-height: 1.4;"><strong>3. Professors/Supervisors in Your Field</strong></span>
                     </label>
+                    <label style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 12px 16px; cursor: pointer; border-radius: 10px; background: rgba(102, 126, 234, 0.05); border: 1px solid rgba(102, 126, 234, 0.15); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(102, 126, 234, 0.1)'" onmouseout="this.style.background='rgba(102, 126, 234, 0.05)'">
+                        <input type="checkbox" id="aiPowered" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: #e67e22;" />
+                        <span style="line-height: 1.4;"><strong>4. Enable AI-Powered Crawling (Gemini)</strong> <span style="font-size:0.8em; background:#e67e22; color:white; padding:2px 4px; border-radius:4px;">NEW</span></span>
+                    </label>
                 </div>
                 <p class="input-hint">Select at least one search type</p>
             </div>
@@ -663,8 +667,9 @@ DASHBOARD_TEMPLATE = """
                     keywords: keywords, 
                     recipient_email: recipientEmail,
                     position_type: positionType,
-                    search_types: searchTypes.join(',')  // NEW: Send search types
-                })
+                    position_type: positionType,
+                    search_types: searchTypes.join(','),
+                    use_ai_crawler: document.getElementById('aiPowered').checked
             })
                 .then(res => res.json())
                 .then(data => {
@@ -843,7 +848,7 @@ user_jobs = {}  # {username: job_id}
 current_process = None
 current_process_lock = threading.Lock()
 
-def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, username: str, position_type: str = "phd", search_types: str = "open"):
+def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, username: str, position_type: str = "phd", search_types: str = "open", use_ai_crawler: bool = False):
     """Run the PhD agent for a queued job"""
     global current_process
     try:
@@ -855,6 +860,8 @@ def run_agent_with_queue(job_id: str, keywords: str, recipient_email: str, usern
             cmd.extend(["--recipient", recipient_email])
         if keywords:
             cmd.extend(["--keywords", keywords])
+        if use_ai_crawler:
+            cmd.append("--ai-powered")
         
         # Start process FIRST to get PID
         process = subprocess.Popen(
@@ -908,7 +915,15 @@ def process_queue():
         update_job_log(job_id, "\n🚀 Your turn! Starting job from queue...\n")
         thread = threading.Thread(
             target=run_agent_with_queue, 
-            args=(job_id, next_job["keywords"], next_job["recipient"], next_job["user"], "phd", "open")  # TODO: Store search_types in queue
+            args=(
+                job_id, 
+                next_job.get("keywords", ""), 
+                next_job.get("recipient", ""), 
+                next_job.get("user", ""), 
+                next_job.get("position_type", "phd"), 
+                next_job.get("search_types", "open"),
+                next_job.get("use_ai_crawler", False)
+            )
         )
         thread.daemon = True
         thread.start()
@@ -1008,6 +1023,9 @@ def run():
     recipient_email = data.get("recipient_email", "")
     position_type = data.get("position_type", "phd")  # Default to PhD
     search_types = data.get("search_types", "open")  # Default to open positions
+    use_ai_crawler = data.get("use_ai_crawler", False) or "ai_powered" in data # Handle both keys if JS uses old one
+    if isinstance(use_ai_crawler, str):
+        use_ai_crawler = use_ai_crawler.lower() == 'true'
     
     # Create a new job
     job_id = create_job_status(
@@ -1022,8 +1040,8 @@ def run():
     
     # Check if a job is already running
     if is_locked():
-        # Add to queue (note: queue doesn't support position_type yet, but it's passed when run starts)
-        add_to_queue(username, keywords, recipient_email)
+        # Add to queue
+        add_to_queue(username, keywords, recipient_email, position_type, search_types, use_ai_crawler)
         queue_pos = get_queue_length()
         
         update_job_log(job_id, 
@@ -1044,7 +1062,7 @@ def run():
     # Start immediately
     thread = threading.Thread(
         target=run_agent_with_queue, 
-        args=(job_id, keywords, recipient_email, username, position_type, search_types)
+        args=(job_id, keywords, recipient_email, username, position_type, search_types, use_ai_crawler)
     )
     thread.daemon = True
     thread.start()

@@ -16,6 +16,7 @@ from faculty_scraper import FacultyScraper, load_universities_from_file
 from inquiry_detector import InquiryDetector
 from german_universities_scraper import GermanUniversitiesScraper
 from finnish_universities_scraper import FinnishUniversitiesScraper
+from ai_crawler import AICrawler
 from dotenv import load_dotenv
 import smtplib
 from email.mime.text import MIMEText
@@ -70,7 +71,8 @@ def send_status_email(status: str, details: str = ""):
         print(f"❌ Failed to send status email: {e}")
 
 async def main(recipient_email=None, custom_keywords=None, position_type="phd", 
-               search_open_positions=True, search_inquiry_positions=False, search_professors=False):
+               search_open_positions=True, search_inquiry_positions=False, search_professors=False,
+               use_ai_crawler=False):
     """
     Main PhD agent function.
     recipient_email: Email to send results to (defaults to OWNER_EMAIL)
@@ -79,6 +81,7 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
     search_open_positions: Search for open job postings (default: True)
     search_inquiry_positions: Search for inquiry opportunities on faculty pages (default: False)
     search_professors: Search for professors in the field (default: False)
+    use_ai_crawler: Use Gemini-powered AI crawler for smarter navigation (default: False)
     """
     pos_label = "PhD/Doctoral" if position_type == "phd" else "PostDoc/Tenure Track"
     
@@ -170,8 +173,14 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
             print(f"✓ Found {len(gp_jobs)} jobs from global portals")
 
             # 2b. Scrape Universities
-            print(f"\n🏫 Running University Scraper ({len(universities)} institutions)...")
-            uni_scraper = UniversityScraper(analyzer, universities)
+            if use_ai_crawler:
+                print(f"\n🧠 Running AI-Powered University Scraper ({len(universities)} institutions)...")
+                print("   (Using Gemini 1.5 Flash for Semantic Navigation)")
+                uni_scraper = AICrawler(analyzer, universities, position_type)
+            else:
+                print(f"\n🏫 Running University Scraper ({len(universities)} institutions)...")
+                uni_scraper = UniversityScraper(analyzer, universities)
+            
             uni_jobs = await uni_scraper.scrape(context)
             all_found_jobs.extend(uni_jobs)
             print(f"✓ Found {len(uni_jobs)} jobs from universities")
