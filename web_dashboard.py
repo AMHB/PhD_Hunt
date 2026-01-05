@@ -98,62 +98,90 @@ LOGIN_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - PhD Headhunter</title>
+    <title>Sign In - PhD Headhunter</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #0A84FF;
+            --bg: #000000;
+            --surface: rgba(28, 28, 30, 0.65);
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #ffffff;
+            --text-secondary: rgba(235, 235, 245, 0.6);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 100% 0%, #1c1c1e 0%, transparent 40%),
+                radial-gradient(circle at 0% 100%, #1c1c1e 0%, transparent 40%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            color: var(--text);
         }
         .login-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 50px 40px;
-            max-width: 400px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 360px;
+            padding: 48px 40px;
+            background: var(--surface);
+            backdrop-filter: blur(50px) saturate(180%);
+            -webkit-backdrop-filter: blur(50px) saturate(180%);
+            border: 0.5px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 40px 80px -20px rgba(0,0,0,0.5);
         }
-        .emoji { font-size: 4em; text-align: center; margin-bottom: 15px; }
-        h1 { color: #1a1a2e; text-align: center; margin-bottom: 10px; font-size: 1.8em; }
-        .subtitle { color: #666; text-align: center; margin-bottom: 30px; }
-        .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; }
-        .input-group input {
+        h1 { font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .subtitle { font-size: 15px; color: var(--text-secondary); text-align: center; margin-bottom: 40px; font-weight: 400; }
+        
+        .input-group { margin-bottom: 24px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; color: var(--text-secondary); }
+        input {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            padding: 16px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            color: white;
+            font-size: 17px;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
         }
-        .input-group input:focus { border-color: #667eea; outline: none; }
+        input::placeholder { color: rgba(255,255,255,0.2); }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(0,0,0,0.4);
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.25);
+        }
+        
         .login-btn {
             width: 100%;
-            padding: 15px;
-            font-size: 1.1em;
-            font-weight: bold;
+            padding: 16px;
+            background: var(--primary);
             color: white;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 10px;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
+            margin-top: 12px;
         }
-        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); }
-        .error { background: #ffe6e6; color: #c00; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-        .footer { text-align: center; margin-top: 25px; color: #999; font-size: 0.9em; }
+        .login-btn:hover { background: #0077ED; transform: translateY(-1px); }
+        .login-btn:active { transform: scale(0.98); }
+        
+        .error { 
+            color: #FF453A; font-size: 14px; text-align: center; margin-bottom: 24px; 
+            background: rgba(255, 69, 58, 0.1); padding: 12px; border-radius: 12px; 
+            border: 1px solid rgba(255, 69, 58, 0.2);
+        }
+        .footer { text-align: center; margin-top: 40px; font-size: 13px; color: rgba(255,255,255,0.3); }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="emoji">🔐</div>
         <h1>PhD Headhunter</h1>
-        <p class="subtitle">Please login to continue</p>
+        <p class="subtitle">Sign in to manage your agent</p>
         
         {% if error %}
         <div class="error">{{ error }}</div>
@@ -161,17 +189,17 @@ LOGIN_TEMPLATE = """
         
         <form method="POST">
             <div class="input-group">
-                <label for="username">👤 Username</label>
-                <input type="text" id="username" name="username" required placeholder="Enter username">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required placeholder="name@example.com" autocomplete="username">
             </div>
             <div class="input-group">
-                <label for="password">🔑 Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter password">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="••••••••" autocomplete="current-password">
             </div>
-            <button type="submit" class="login-btn">🚀 Login</button>
+            <button type="submit" class="login-btn">Sign In</button>
         </form>
         
-        <div class="footer">PhD Headhunter v1.3 | Secured Access</div>
+        <div class="footer">v1.4 • Private Access</div>
     </div>
 </body>
 </html>
@@ -183,63 +211,116 @@ ADMIN_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - PhD Headhunter</title>
+    <title>Admin - PhD Headhunter</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #0A84FF;
+            --bg: #000000;
+            --surface: #1C1C1E;
+            --surface-secondary: #2C2C2E;
+            --border: #38383A;
+            --text: #ffffff;
+            --text-secondary: rgba(235, 235, 245, 0.6);
+            --danger: #FF453A;
+            --success: #30D158;
+            --warning: #FFD60A;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2d1f3d 0%, #1a1a2e 100%);
+            background-color: var(--bg);
             min-height: 100vh;
-            padding: 30px;
+            color: var(--text);
+            padding: 40px 20px;
         }
         .container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 40px;
             max-width: 900px;
             margin: 0 auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        h1 { color: #1a1a2e; font-size: 1.8em; }
-        .nav-links a { color: #667eea; text-decoration: none; margin-left: 20px; font-weight: 600; }
-        .nav-links a:hover { text-decoration: underline; }
+        .header { 
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; 
+            padding-bottom: 20px; border-bottom: 1px solid var(--border);
+        }
+        h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
         
-        .section { background: #f8f9fa; border-radius: 15px; padding: 25px; margin-bottom: 25px; }
-        .section h2 { color: #333; margin-bottom: 20px; font-size: 1.3em; }
+        .nav-link { 
+            color: var(--primary); text-decoration: none; font-weight: 500; font-size: 15px; 
+            padding: 8px 16px; border-radius: 8px; transition: background 0.2s;
+        }
+        .nav-link:hover { background: rgba(10, 132, 255, 0.1); }
+        .nav-link.logout { color: var(--danger); }
+        .nav-link.logout:hover { background: rgba(255, 69, 58, 0.1); }
+        
+        .section { margin-bottom: 40px; }
+        .section h2 { 
+            font-size: 20px; font-weight: 600; margin-bottom: 16px; color: var(--text); 
+            display: flex; align-items: center; gap: 10px;
+        }
+        
+        .card {
+            background: var(--surface);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
         
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #dee2e6; }
-        th { background: #667eea; color: white; font-weight: 600; }
-        tr:hover { background: #f0f0f0; }
-        .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-        .badge-admin { background: #ffc107; color: #333; }
-        .badge-user { background: #28a745; color: white; }
+        th { 
+            text-align: left; padding: 16px 20px; 
+            background: var(--surface-secondary); 
+            font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;
+        }
+        td { 
+            padding: 16px 20px; border-top: 1px solid var(--border); 
+            font-size: 15px; color: var(--text);
+        }
+        tr:last-child td { border-bottom: none; }
         
-        .delete-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
-        .delete-btn:hover { background: #c82333; }
+        .badge { 
+            display: inline-block; padding: 4px 10px; border-radius: 6px; 
+            font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
+        }
+        .badge-admin { background: rgba(255, 214, 10, 0.2); color: var(--warning); border: 1px solid rgba(255, 214, 10, 0.3); }
+        .badge-user { background: rgba(48, 209, 88, 0.2); color: var(--success); border: 1px solid rgba(48, 209, 88, 0.3); }
         
-        .add-form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end; }
-        .add-form .input-group { margin: 0; }
-        .add-form label { display: block; font-weight: 600; margin-bottom: 5px; color: #333; }
-        .add-form input, .add-form select { width: 100%; padding: 10px; border: 2px solid #dee2e6; border-radius: 8px; }
-        .add-btn { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .add-btn:hover { transform: translateY(-1px); }
+        .action-btn { 
+            background: none; border: none; cursor: pointer; padding: 6px 12px; 
+            font-size: 13px; font-weight: 500; border-radius: 6px; transition: all 0.2s;
+        }
+        .btn-delete { color: var(--danger); background: rgba(255, 69, 58, 0.1); }
+        .btn-delete:hover { background: rgba(255, 69, 58, 0.2); }
         
-        .message { padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-        .message-success { background: #d4edda; color: #155724; }
-        .message-error { background: #f8d7da; color: #721c24; }
+        .form-grid { 
+            display: grid; grid-template-columns: 1fr 1fr 120px auto; gap: 16px; padding: 20px; 
+            align-items: end; background: var(--surface);
+        }
+        .input-wrapper label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
+        .input-wrapper input, .input-wrapper select {
+            width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border); border-radius: 10px;
+            color: white; font-size: 15px;
+        }
+        .input-wrapper input:focus, .input-wrapper select:focus {
+            outline: none; border-color: var(--primary);
+        }
         
-        .footer { text-align: center; margin-top: 20px; color: #999; }
+        .btn-add {
+            width: 100%; padding: 11px; background: var(--success); color: #000;
+            border: none; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer;
+        }
+        .btn-add:hover { opacity: 0.9; }
+        
+        .message { padding: 16px; border-radius: 12px; margin-bottom: 24px; font-size: 15px; }
+        .message-success { background: rgba(48, 209, 88, 0.15); color: var(--success); border: 1px solid rgba(48, 209, 88, 0.2); }
+        .message-error { background: rgba(255, 69, 58, 0.15); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.2); }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>⚙️ Admin Panel</h1>
-            <div class="nav-links">
-                <a href="/PhD_hunt">📊 Dashboard</a>
-                <a href="/logout">🚪 Logout</a>
+            <h1>Admin Panel</h1>
+            <div>
+                <a href="/PhD_hunt" class="nav-link">Dashboard</a>
+                <a href="/logout" class="nav-link logout">Sign Out</a>
             </div>
         </div>
         
@@ -248,59 +329,67 @@ ADMIN_TEMPLATE = """
         {% endif %}
         
         <div class="section">
-            <h2>👥 User Management</h2>
-            <table>
-                <tr>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Created</th>
-                    <th>Action</th>
-                </tr>
-                {% for username, user in users.items() %}
-                <tr>
-                    <td>{{ username }}</td>
-                    <td><span class="badge {% if user.is_admin %}badge-admin{% else %}badge-user{% endif %}">
-                        {% if user.is_admin %}Admin{% else %}User{% endif %}
-                    </span></td>
-                    <td>{{ user.created }}</td>
-                    <td>
-                        {% if username != session.username %}
-                        <form method="POST" action="/admin/delete" style="display:inline">
-                            <input type="hidden" name="username" value="{{ username }}">
-                            <button type="submit" class="delete-btn" onclick="return confirm('Delete user {{ username }}?')">🗑️ Delete</button>
-                        </form>
-                        {% else %}
-                        <span style="color:#999">Current user</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
+            <h2>User Management</h2>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for username, user in users.items() %}
+                        <tr>
+                            <td>{{ username }}</td>
+                            <td>
+                                <span class="badge {% if user.is_admin %}badge-admin{% else %}badge-user{% endif %}">
+                                    {% if user.is_admin %}ADMIN{% else %}USER{% endif %}
+                                </span>
+                            </td>
+                            <td style="color: var(--text-secondary); font-size: 13px;">{{ user.created }}</td>
+                            <td>
+                                {% if username != session.username %}
+                                <form method="POST" action="/admin/delete" style="display:inline">
+                                    <input type="hidden" name="username" value="{{ username }}">
+                                    <button type="submit" class="action-btn btn-delete" onclick="return confirm('Delete user {{ username }}?')">Delete</button>
+                                </form>
+                                {% else %}
+                                <span style="color: var(--text-secondary); font-size: 13px;">(You)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <div class="section">
-            <h2>➕ Add New User</h2>
-            <form method="POST" action="/admin/add" class="add-form">
-                <div class="input-group">
-                    <label>Username</label>
-                    <input type="text" name="new_username" required placeholder="username">
-                </div>
-                <div class="input-group">
-                    <label>Password</label>
-                    <input type="password" name="new_password" required placeholder="password">
-                </div>
-                <div class="input-group">
-                    <label>Role</label>
-                    <select name="is_admin">
-                        <option value="0">User</option>
-                        <option value="1">Admin</option>
-                    </select>
-                </div>
-                <button type="submit" class="add-btn">➕ Add User</button>
-            </form>
+            <h2>Add New User</h2>
+            <div class="card">
+                <form method="POST" action="/admin/add" class="form-grid">
+                    <div class="input-wrapper">
+                        <label>Username</label>
+                        <input type="text" name="new_username" required placeholder="username">
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Password</label>
+                        <input type="password" name="new_password" required placeholder="password">
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Role</label>
+                        <select name="is_admin">
+                            <option value="0">User</option>
+                            <option value="1">Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-add">Add</button>
+                </form>
+            </div>
         </div>
-        
-        <div class="footer">PhD Headhunter Admin Panel | Logged in as: {{ session.username }}</div>
     </div>
 </body>
 </html>
@@ -312,236 +401,262 @@ DASHBOARD_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PhD Headhunter Dashboard</title>
+    <title>Dashboard - PhD Headhunter</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #0A84FF;
+            --primary-hover: #0077ED;
+            --bg: #000000;
+            --surface: #1C1C1E;
+            --surface-glass: rgba(28, 28, 30, 0.7);
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #ffffff;
+            --text-secondary: rgba(235, 235, 245, 0.6);
+            --success: #30D158;
+            --warning: #FFD60A;
+            --danger: #FF453A;
+            --terminal-bg: #151517;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0a0a0a;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 50% -20%, #1a1a40 0%, transparent 60%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            color: var(--text);
+            padding: 40px 20px;
         }
         .container {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(30px) saturate(180%);
-            -webkit-backdrop-filter: blur(30px) saturate(180%);
-            border-radius: 24px;
-            padding: 48px;
             max-width: 1000px;
-            width: 100%;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 0 auto;
         }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .user-info { color: rgba(255, 255, 255, 0.7); font-size: 0.9em; }
-        .user-info a { color: rgba(255, 255, 255, 0.9); text-decoration: none; margin-left: 10px; padding: 6px 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.1); transition: all 0.2s ease; }
-        .user-info a:hover { background: rgba(255, 255, 255, 0.15); }
-        h1 { color: #ffffff; text-align: center; font-size: 2em; font-weight: 700; letter-spacing: -0.5px; }
-        .subtitle { color: rgba(255, 255, 255, 0.6); text-align: center; margin-bottom: 25px; font-weight: 500; }
-        .emoji { font-size: 3em; text-align: center; margin-bottom: 10px; }
         
-        .input-section {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        .header { 
+            display: flex; justify-content: flex-end; margin-bottom: 60px; 
+            font-size: 14px; color: var(--text-secondary);
         }
-        .input-section h3 { color: rgba(255, 255, 255, 0.95); margin-bottom: 15px; font-size: 1.1em; font-weight: 600; }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; font-weight: 600; color: rgba(255, 255, 255, 0.9); margin-bottom: 5px; }
-        .input-group input, .input-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
+        .header a { color: var(--text); text-decoration: none; margin-left: 20px; font-weight: 500; transition: color 0.2s; }
+        .header a:hover { color: var(--primary); }
+        
+        .hero { text-align: center; margin-bottom: 60px; }
+        .hero h1 { 
+            font-size: 56px; font-weight: 800; letter-spacing: -1px; margin-bottom: 16px; 
+            background: linear-gradient(135deg, #fff 0%, #aaa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .input-group input::placeholder, .input-group textarea::placeholder { color: rgba(255, 255, 255, 0.4); }
-        .input-group input:focus, .input-group textarea:focus { border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.12); outline: none; }
-        .input-group textarea { min-height: 80px; resize: vertical; }
-        .input-hint { font-size: 12px; color: rgba(255, 255, 255, 0.5); margin-top: 5px; }
+        .hero p { font-size: 21px; color: var(--text-secondary); font-weight: 400; }
         
-        .status-box { background: #f8f9fa; border-radius: 10px; padding: 15px 20px; margin-bottom: 20px; }
-        .status-item { display: flex; justify-content: space-between; margin: 8px 0; }
-        .status-label { font-weight: 600; color: #333; }
-        .status-value { color: #666; }
-        .status-running { color: #f39c12; font-weight: bold; }
-        .status-idle { color: #27ae60; }
+        .grid { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 24px; margin-bottom: 40px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
         
-        .run-btn {
-            width: 100%;
-            padding: 18px 40px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #0a0a0a;
-            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2);
+        .card {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 32px;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(20px);
         }
-        .run-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3); }
-        .run-btn:disabled { background: rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.5); cursor: not-allowed; }
-        .run-btn.running { background: linear-gradient(135deg, #cccccc 0%, #999999 100%); animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .section-title { font-size: 19px; font-weight: 600; margin-bottom: 24px; color: var(--text); }
         
-        .terminate-btn {
+        .input-group { margin-bottom: 24px; }
+        .input-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        input, textarea, select {
             width: 100%;
-            padding: 12px 40px;
-            font-size: 1em;
-            font-weight: bold;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
             color: white;
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 15px;
-            display: none;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 16px;
+            transition: all 0.2s;
         }
-        .terminate-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(220, 53, 69, 0.4); }
-        .terminate-btn.show { display: block; }
+        textarea { min-height: 120px; line-height: 1.5; resize: vertical; }
+        input:focus, textarea:focus, select:focus {
+            outline: none; border-color: var(--primary); background: rgba(0,0,0,0.5);
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15);
+        }
         
-        .log-box {
-            background: #000;
-            color: #0f0;
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            padding: 15px;
-            max-height: 300px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            border-top: 1px solid #333;
-        }
-        details {
-            margin-top: 20px;
-            background: #1a1a2e;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #333;
-        }
-        summary {
-            padding: 12px 15px;
+        .checkbox-group { display: flex; flex-direction: column; gap: 12px; }
+        .checkbox-item {
+            display: flex; align-items: flex-start; gap: 14px;
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 14px;
             cursor: pointer;
-            color: #aaa;
-            font-weight: bold;
-            user-select: none;
-            outline: none;
-            background: #222;
+            transition: all 0.2s;
         }
-        summary:hover {
-            color: #fff;
-            background: #333;
+        .checkbox-item:hover { background: rgba(255,255,255,0.06); }
+        .checkbox-item input { width: 20px; height: 20px; accent-color: var(--primary); margin: 0; margin-top: 2px; }
+        #aiPowered { accent-color: #FF9500; }
+        .checkbox-label strong { display: block; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+        .checkbox-label { font-size: 14px; color: var(--text-secondary); line-height: 1.4; }
+        
+        .status-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+        .status-row:last-child { border-bottom: none; }
+        .status-key { color: var(--text-secondary); font-size: 15px; }
+        .status-val { font-weight: 600; font-size: 15px; }
+        
+        .status-idle { color: var(--success); }
+        .status-running { color: var(--warning); display: flex; align-items: center; gap: 8px; }
+        
+        .timer-badge { 
+            background: rgba(10, 132, 255, 0.2); color: var(--primary); 
+            padding: 4px 8px; border-radius: 6px; font-family: "SF Mono", Menlo, monospace; font-size: 13px;
         }
-        .status-msg-box {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 1.1em;
-            min-height: 24px;
-            color: #4cd137;
+
+        .btn-run {
+            width: 100%; padding: 20px;
+            background: var(--primary);
+            color: white; font-size: 18px; font-weight: 700;
+            border: none; border-radius: 18px;
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 10px 30px -10px rgba(10, 132, 255, 0.5);
         }
-        .footer { text-align: center; margin-top: 20px; color: #999; font-size: 0.85em; }
+        .btn-run:hover:not(:disabled) { transform: scale(1.02); background: var(--primary-hover); }
+        .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-run.running { animation: pulse 2s infinite; }
+        
+        .btn-terminate {
+            width: 100%; padding: 16px;
+            background: rgba(255, 69, 58, 0.15); color: var(--danger);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+            border-radius: 14px; font-weight: 600; font-size: 15px;
+            cursor: pointer; display: none; margin-top: 12px;
+        }
+        .btn-terminate:hover { background: rgba(255, 69, 58, 0.25); }
+        #terminateBtn.show { display: block; }
+        
+        details { background: var(--terminal-bg); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; }
+        summary { 
+            padding: 16px 20px; cursor: pointer; color: var(--text-secondary); 
+            font-weight: 500; font-size: 14px; user-select: none;
+            background: rgba(255,255,255,0.02);
+            transition: color 0.2s;
+        }
+        summary:hover { color: var(--text); }
+        .log-box {
+            padding: 20px; font-family: "SF Mono", Menlo, monospace; font-size: 12px; line-height: 1.6;
+            color: #7BE188; border-top: 1px solid var(--border);
+            max-height: 400px; overflow-y: auto; white-space: pre-wrap;
+        }
+        
+        .status-msg { text-align: center; margin-bottom: 24px; min-height: 24px; color: var(--text-secondary); font-size: 15px; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        
+        .footer { text-align: center; margin-top: 60px; color: var(--text-secondary); font-size: 13px; opacity: 0.5; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div></div>
-            <div class="user-info">
-                👤 {{ username }}
-                {% if is_admin %}<a href="/admin">⚙️ Admin</a>{% endif %}
-                <a href="/logout">🚪 Logout</a>
-            </div>
+            <span>Signed in as <strong>{{ username }}</strong></span>
+            {% if is_admin %}<a href="/admin">Admin</a>{% endif %}
+            <a href="/logout">Sign Out</a>
         </div>
         
-        <div class="emoji">🎓</div>
-        <h1>PhD Headhunter</h1>
-        <p class="subtitle">Automated PhD Position Finder</p>
+        <div class="hero">
+            <h1>PhD Headhunter</h1>
+            <p>Automated Position Discovery & Analysis</p>
+        </div>
         
-        <div class="input-section">
-            <h3>🔧 Search Configuration</h3>
-            <div class="input-group">
-                <label for="keywords">📑 Search Keywords (comma-separated) <span style="color: red;">*</span></label>
-                <textarea id="keywords" placeholder="e.g., Machine Learning, 5G, Cybersecurity, Signal Processing, IoT" required></textarea>
-                <p class="input-hint">Required: Enter at least one keyword</p>
-            </div>
-            <div class="input-group">
-                <label for="positionType">🎯 Position Type</label>
-                <select id="positionType" style="width:100%; padding:12px; border:2px solid #dee2e6; border-radius:8px; font-size:14px;">
-                    <option value="phd">PhD / Doctoral Positions</option>
-                    <option value="postdoc">PostDoc / Tenure Track (Professorship)</option>
-                </select>
-                <p class="input-hint">Select the type of academic position to search for</p>
-            </div>
-            <div class="input-group">
-                <label>🔍 I would like you to find:</label>
-                <div style="margin-top: 12px;">
-                    <label style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 12px 16px; cursor: pointer; border-radius: 10px; background: rgba(102, 126, 234, 0.05); border: 1px solid rgba(102, 126, 234, 0.15); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(102, 126, 234, 0.1)'" onmouseout="this.style.background='rgba(102, 126, 234, 0.05)'">
-                        <input type="checkbox" id="searchOpen" checked style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: #667eea;" />
-                        <span style="line-height: 1.4;"><strong>1. Open PhD/PostDoc Positions</strong> (Job Portals)</span>
-                    </label>
-                    <label style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 12px 16px; cursor: pointer; border-radius: 10px; background: rgba(102, 126, 234, 0.05); border: 1px solid rgba(102, 126, 234, 0.15); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(102, 126, 234, 0.1)'" onmouseout="this.style.background='rgba(102, 126, 234, 0.05)'">
-                        <input type="checkbox" id="searchInquiry" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: #667eea;" />
-                        <span style="line-height: 1.4;"><strong>2. Possible PhD/PostDoc Inquiry Positions</strong> (Faculty Pages)</span>
-                    </label>
-                    <label style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 12px 16px; cursor: pointer; border-radius: 10px; background: rgba(102, 126, 234, 0.05); border: 1px solid rgba(102, 126, 234, 0.15); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(102, 126, 234, 0.1)'" onmouseout="this.style.background='rgba(102, 126, 234, 0.05)'">
-                        <input type="checkbox" id="searchProfessors" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: #667eea;" />
-                        <span style="line-height: 1.4;"><strong>3. Professors/Supervisors in Your Field</strong></span>
-                    </label>
-                    <label style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 12px 16px; cursor: pointer; border-radius: 10px; background: rgba(102, 126, 234, 0.05); border: 1px solid rgba(102, 126, 234, 0.15); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(102, 126, 234, 0.1)'" onmouseout="this.style.background='rgba(102, 126, 234, 0.05)'">
-                        <input type="checkbox" id="aiPowered" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: #e67e22;" />
-                        <span style="line-height: 1.4;"><strong>4. Enable AI-Powered Crawling (Gemini)</strong> <span style="font-size:0.8em; background:#e67e22; color:white; padding:2px 4px; border-radius:4px;">NEW</span></span>
-                    </label>
+        <div class="grid">
+            <div class="card">
+                <div class="section-title">Search Configuration</div>
+                
+                <div class="input-group">
+                    <label class="input-label" for="keywords">Research Keywords</label>
+                    <textarea id="keywords" placeholder="e.g. Machine Learning, 5G Networks, Bioinformatics..." required></textarea>
                 </div>
-                <p class="input-hint">Select at least one search type</p>
+                
+                <div class="input-group">
+                    <label class="input-label" for="positionType">Position Type</label>
+                    <select id="positionType">
+                        <option value="phd">PhD / Doctoral Candidate</option>
+                        <option value="postdoc">PostDoc / Tenure Track</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Sources & Methods</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="searchOpen" checked>
+                            <div class="checkbox-label">
+                                <strong>Job Portals</strong>
+                                Search open positions on major aggregator sites
+                            </div>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="searchInquiry">
+                            <div class="checkbox-label">
+                                <strong>Faculty Pages</strong>
+                                Detect potential inquiry opportunities from lab sites
+                            </div>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="searchProfessors">
+                            <div class="checkbox-label">
+                                <strong>Supervisor Search</strong>
+                                Identify relevant professors in the field
+                            </div>
+                        </label>
+                        <label class="checkbox-item" style="border-color: rgba(255, 149, 0, 0.3); background: rgba(255, 149, 0, 0.05);">
+                            <input type="checkbox" id="aiPowered">
+                            <div class="checkbox-label">
+                                <strong style="color: #FF9500;">AI-Powered Crawler (Gemini)</strong>
+                                Use LLM to intelligently navigate university websites
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label" for="recipientEmail">Email Report To</label>
+                    <input type="email" id="recipientEmail" placeholder="name@example.com" required>
+                </div>
             </div>
-            <div class="input-group">
-                <label for="recipientEmail">📧 Send Results To (Email) <span style="color: red;">*</span></label>
-                <input type="email" id="recipientEmail" placeholder="e.g., yourname@gmail.com" required>
-                <p class="input-hint">Required: Enter a valid email address</p>
+            
+            <div>
+                <div class="card" style="position: sticky; top: 40px;">
+                    <div class="section-title">System Status</div>
+                    
+                    <div class="status-row">
+                        <span class="status-key">Current State</span>
+                        <div id="status" class="status-val status-idle">Ready</div>
+                    </div>
+                     <div class="status-row" id="timerRow" style="display:none;">
+                        <span class="status-key">Duration</span>
+                        <span id="jobTimer" class="timer-badge">00:00:00</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-key">Last Run</span>
+                        <span id="lastRun" class="status-val">-</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-key">Result</span>
+                        <span id="lastResult" class="status-val">-</span>
+                    </div>
+                    
+                    <div style="margin-top: 32px;">
+                        <button id="runBtn" class="btn-run" onclick="runAgent()">Start Search</button>
+                        <button id="terminateBtn" class="btn-terminate" onclick="terminateJob()">Terminate Job</button>
+                    </div>
+                    
+                    <div id="statusMessage" class="status-msg" style="margin-top: 20px; font-size: 13px;"></div>
+                </div>
             </div>
         </div>
-        
-        <div class="status-box">
-            <div class="status-item">
-                <span class="status-label">Status:</span>
-                <span id="status" class="status-value status-idle">Idle</span>
-                <span id="jobTimerBadge" class="badge bg-info text-dark" style="display: none; margin-left: 10px; font-family: monospace; background-color: #0dcaf0; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">
-                    ⏱️ <span id="jobTimer">00:00:00</span>
-                </span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Last Run:</span>
-                <span id="lastRun" class="status-value">Never</span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Last Result:</span>
-                <span id="lastResult" class="status-value">-</span>
-            </div>
-        </div>
-        
-        <button id="runBtn" class="run-btn" onclick="runAgent()">🚀 Run PhD Agent Now</button>
-        <button id="terminateBtn" class="terminate-btn" onclick="terminateJob()">🛑 Terminate Current Job</button>
-        
-        <div id="statusMessage" class="status-msg-box"></div>
         
         <details>
-            <summary>🖥️ Show Real-Time Terminal Output</summary>
-            <div class="log-box" id="logOutput">Waiting for action...</div>
+            <summary>Terminal Output</summary>
+            <div class="log-box" id="logOutput">System initialized. Waiting for command...</div>
         </details>
         
-        <div class="footer">PhD Headhunter v1.4 | Written by A.Mehrban (amehrb@gmail.com) | Hostinger VPS</div>
+        <div class="footer">
+            PhD Headhunter v1.4 &bull; Designed by A.Mehrban
+        </div>
     </div>
 
     <script>
@@ -560,76 +675,64 @@ DASHBOARD_TEMPLATE = """
                     const runBtn = document.getElementById('runBtn');
                     const terminateBtn = document.getElementById('terminateBtn');
                     const msgEl = document.getElementById('statusMessage');
-                    const jobTimerBadge = document.getElementById('jobTimerBadge');
+                    const timerRow = document.getElementById('timerRow');
                     
                     if (data.is_running) {
-                        // User's job is running or queued
-                        statusEl.textContent = '⏳ Running...';
-                        statusEl.className = 'status-value status-running';
+                        statusEl.textContent = 'Running...';
+                        statusEl.className = 'status-val status-running';
                         runBtn.disabled = true;
-                        runBtn.textContent = '⏳ Agent is Running...';
+                        runBtn.textContent = 'Agent Running...';
                         runBtn.classList.add('running');
                         terminateBtn.classList.add('show');
                         
-                        // Update Timer
                         if ((data.started_at_ts || data.last_run) && !data.is_locked_for_another_user) {
                             try {
                                 let diffSec;
                                 if (data.started_at_ts) {
-                                    // Use Unix timestamp (timezone-safe) - preferred method
                                     const nowSec = Math.floor(Date.now() / 1000);
                                     diffSec = Math.max(0, nowSec - data.started_at_ts);
                                 } else {
-                                    // Fallback: Parse date string for jobs started before timestamp was added
-                                    // Server sends UTC time, so append 'Z' to parse as UTC
                                     const startTime = new Date(data.last_run.replace(" ", "T") + "Z");
                                     const now = new Date();
                                     const diffMs = now - startTime;
                                     diffSec = Math.max(0, Math.floor(diffMs / 1000));
                                 }
                                 document.getElementById('jobTimer').textContent = formatTimeDuration(diffSec);
-                                jobTimerBadge.style.display = 'inline-block';
+                                timerRow.style.display = 'flex';
                             } catch (e) {
-                                console.error("Timer calculation error", e);
-                                jobTimerBadge.style.display = 'none';
+                                timerRow.style.display = 'none';
                             }
                         } else {
-                            jobTimerBadge.style.display = 'none';
+                            timerRow.style.display = 'none';
                         }
                         
                         if (data.queue_len > 0) {
-                             msgEl.textContent = `📋 You are in queue (position ${data.queue_len}).`;
+                             msgEl.textContent = `Queued (Position: ${data.queue_len})`;
                         } else {
-                             msgEl.textContent = "🔄 Job is running in background. Please check your email for results when complete.";
+                             msgEl.textContent = "Processing... Check email for results.";
                         }
                     } else if (data.is_locked_for_another_user) {
-                        // Server is locked but not for this user
-                        statusEl.textContent = '⏳ Running (for another user)';
-                        statusEl.className = 'status-value status-running';
+                        statusEl.textContent = 'Busy (Other User)';
+                        statusEl.className = 'status-val status-running';
                         runBtn.disabled = false;
-                        runBtn.textContent = '🚀 Run PhD Agent Now (will queue)';
+                        runBtn.textContent = 'Queue Search';
                         runBtn.classList.remove('running');
                         terminateBtn.classList.remove('show');
-                        
-                        msgEl.textContent = `ℹ️ Server is busy with another user's request. Your job will be queued.`;
+                        msgEl.textContent = `Server busy. Job will be queued.`;
                     } else {
-                        // Server is completely idle
-                        statusEl.textContent = '✅ Idle';
-                        statusEl.className = 'status-value status-idle';
+                        statusEl.textContent = 'Ready';
+                        statusEl.className = 'status-val status-idle';
                         runBtn.disabled = false;
-                        runBtn.textContent = '🚀 Run PhD Agent Now';
+                        runBtn.textContent = 'Start Search';
                         runBtn.classList.remove('running');
                         terminateBtn.classList.remove('show');
-                        jobTimerBadge.style.display = 'none';
-                        
-                        if (msgEl.textContent.includes('Running')) {
-                            msgEl.textContent = "✅ Ready for new job.";
-                        }
+                        timerRow.style.display = 'none';
+                        msgEl.textContent = "";
                     }
                     
-                    document.getElementById('lastRun').textContent = data.last_run || 'Never';
+                    document.getElementById('lastRun').textContent = data.last_run || '-';
                     document.getElementById('lastResult').textContent = data.last_result || '-';
-                    document.getElementById('logOutput').textContent = data.log_output || 'Waiting for action...';
+                    document.getElementById('logOutput').textContent = data.log_output || 'Waiting for command...';
                 });
         }
         
@@ -638,32 +741,18 @@ DASHBOARD_TEMPLATE = """
             const recipientEmail = document.getElementById('recipientEmail').value.trim();
             const positionType = document.getElementById('positionType').value;
             
-            // Get search types
             const searchTypes = [];
             if (document.getElementById('searchOpen').checked) searchTypes.push('open');
             if (document.getElementById('searchInquiry').checked) searchTypes.push('inquiry');
             if (document.getElementById('searchProfessors').checked) searchTypes.push('professors');
             
-            // Validate required fields
-            if (!keywords) {
-                alert('⚠️ Please enter search keywords!');
-                return;
-            }
-            if (!recipientEmail) {
-                alert('⚠️ Please enter your email address!');
-                return;
-            }
-            if (!recipientEmail.includes('@')) {
-                alert('⚠️ Please enter a valid email address!');
-                return;
-            }
-            if (searchTypes.length === 0) {
-                alert('⚠️ Please select at least one search type!');
-                return;
-            }
+            if (!keywords) { alert('Please enter search keywords'); return; }
+            if (!recipientEmail) { alert('Please enter email address'); return; }
+            if (!recipientEmail.includes('@')) { alert('Invalid email address'); return; }
+            if (searchTypes.length === 0) { alert('Select at least one search type'); return; }
             
             document.getElementById('runBtn').disabled = true;
-            document.getElementById('statusMessage').textContent = '🚀 Submitting request...';
+            document.getElementById('statusMessage').textContent = 'Initiating...';
             
             fetch('/run', { 
                 method: 'POST',
@@ -683,11 +772,9 @@ DASHBOARD_TEMPLATE = """
         }
         
         function terminateJob() {
-            if (!confirm('Are you sure you want to terminate the current job?')) {
-                return;
-            }
+            if (!confirm('Stop the current search? Results collected so far will be lost.')) return;
             
-            document.getElementById('statusMessage').textContent = '🛑 Terminating job...';
+            document.getElementById('statusMessage').textContent = 'Stopping...';
             
             fetch('/terminate', { method: 'POST' })
                 .then(res => res.json())
