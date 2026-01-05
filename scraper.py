@@ -478,8 +478,357 @@ class GlobalPortalScraper(BaseScraper):
             except Exception as e:
                 print(f"Error scraping ApplyKite: {e}")
 
+    async def scrape_owlindex(self, page):
+        """Scrape OwlIndex.com - requires login"""
+        print("Scraping OwlIndex.com...")
+        
+        try:
+            # Login credentials
+            email = "amehrb@gmail.com"
+            password = "Sullivan198766@!"
+            
+            # Navigate to login page
+            await page.goto("https://owlindex.com/login", timeout=30000)
+            await asyncio.sleep(2)
+            
+            # Perform login
+            try:
+                await page.fill('input[type="email"], input[name="email"]', email)
+                await page.fill('input[type="password"], input[name="password"]', password)
+                await page.click('button[type="submit"], input[type="submit"]')
+                await asyncio.sleep(3)
+                print("  Logged in to OwlIndex")
+            except Exception as e:
+                print(f"  Login failed: {e}")
+                return
+            
+            seen_urls = set()
+            
+            # Search for each keyword
+            for term in self.search_terms[:15]:  # Limit to avoid timeout
+                search_url = f"https://owlindex.com/search?q={urllib.parse.quote(term)}"
+                print(f"  Searching OwlIndex for: {term}")
+                
+                try:
+                    await page.goto(search_url, timeout=30000)
+                    await asyncio.sleep(2)
+                    
+                    # Extract job listings
+                    jobs_data = await page.evaluate('''() => {
+                        const results = [];
+                        const items = document.querySelectorAll('.job-item, .position, article, [class*="job"], [class*="listing"]');
+                        
+                        items.forEach(item => {
+                            const titleEl = item.querySelector('h2 a, h3 a, .title a, a[class*="title"]');
+                            if (!titleEl) return;
+                            
+                            const title = titleEl.innerText.trim();
+                            const link = titleEl.href || titleEl.getAttribute('href') || '';
+                            
+                            const orgEl = item.querySelector('.university, .organization, .employer, [class*="uni"]');
+                            const org = orgEl ? orgEl.innerText.trim() : 'OwlIndex';
+                            
+                            if (title.length > 5 && link) {
+                                results.push({ title, link, org });
+                            }
+                        });
+                        
+                        return results;
+                    }''')
+                    
+                    if len(jobs_data) > 0:
+                        print(f"    Found {len(jobs_data)} jobs for '{term}'")
+                    
+                    for job in jobs_data:
+                        link = job['link']
+                        if link.startswith("/"):
+                            link = "https://owlindex.com" + link
+                        
+                        if link in seen_urls:
+                            continue
+                        seen_urls.add(link)
+                        
+                        self.jobs.append({
+                            "title": job['title'],
+                            "university": job['org'],
+                            "url": link,
+                            "found_date": datetime.now().strftime("%Y-%m-%d"),
+                            "source": "OwlIndex"
+                        })
+                        
+                except Exception as e:
+                    print(f"    Error searching OwlIndex for {term}: {e}")
+                    
+        except Exception as e:
+            print(f"Error scraping OwlIndex: {e}")
+
+    async def scrape_phdscanner(self, page):
+        """Scrape PhDScanner.com"""
+        print("Scraping PhDScanner.com...")
+        
+        urls = [
+            "https://www.phdscanner.com/phd-vacancies/standard/",
+            "https://www.phdscanner.com/phd-postings"
+        ]
+        
+        seen_urls = set()
+        
+        for base_url in urls:
+            print(f"  Checking {base_url}...")
+            try:
+                await page.goto(base_url, timeout=30000)
+                await asyncio.sleep(2)
+                
+                # Extract job listings
+                jobs_data = await page.evaluate('''() => {
+                    const results = [];
+                    const items = document.querySelectorAll('.vacancy, .job-listing, article, [class*="job"], [class*="phd"]');
+                    
+                    items.forEach(item => {
+                        const titleEl = item.querySelector('h2 a, h3 a, .title a, a[class*="title"]');
+                        if (!titleEl) return;
+                        
+                        const title = titleEl.innerText.trim();
+                        const link = titleEl.href || titleEl.getAttribute('href') || '';
+                        
+                        const orgEl = item.querySelector('.institution, .university, .employer');
+                        const org = orgEl ? orgEl.innerText.trim() : 'PhDScanner';
+                        
+                        if (title.length > 5 && link) {
+                            results.push({ title, link, org });
+                        }
+                    });
+                    
+                    return results;
+                }''')
+                
+                if len(jobs_data) > 0:
+                    print(f"    Found {len(jobs_data)} positions")
+                
+                for job in jobs_data:
+                    link = job['link']
+                    if link.startswith("/"):
+                        link = "https://www.phdscanner.com" + link
+                    
+                    if link in seen_urls:
+                        continue
+                    seen_urls.add(link)
+                    
+                    # Check relevance
+                    if self.analyzer.is_relevant(job['title']):
+                        self.jobs.append({
+                            "title": job['title'],
+                            "university": job['org'],
+                            "url": link,
+                            "found_date": datetime.now().strftime("%Y-%m-%d"),
+                            "source": "PhDScanner"
+                        })
+                        
+            except Exception as e:
+                print(f"    Error scraping {base_url}: {e}")
+
+    async def scrape_scholarshipdb(self, page):
+        """Scrape ScholarshipDB.net"""
+        print("Scraping ScholarshipDB.net...")
+        
+        url = "http://scholarshipdb.net/scholarships/Program-PhD"
+        
+        try:
+            await page.goto(url, timeout=30000)
+            await asyncio.sleep(2)
+            
+            # Extract scholarship/PhD listings
+            jobs_data = await page.evaluate('''() => {
+                const results = [];
+                const items = document.querySelectorAll('.scholarship, .listing, article, [class*="scholar"]');
+                
+                items.forEach(item => {
+                    const titleEl = item.querySelector('h2 a, h3 a, .title a, a');
+                    if (!titleEl) return;
+                    
+                    const title = titleEl.innerText.trim();
+                    const link = titleEl.href || titleEl.getAttribute('href') || '';
+                    
+                    const orgEl = item.querySelector('.university, .institution, .provider');
+                    const org = orgEl ? orgEl.innerText.trim() : 'ScholarshipDB';
+                    
+                    const text = item.innerText.toLowerCase();
+                    
+                    // Filter for Europe/Germany/Finland
+                    if ((text.includes('germany') || text.includes('finland') || 
+                         text.includes('europe') || text.includes('eu')) && 
+                        title.length > 5 && link) {
+                        results.push({ title, link, org });
+                    }
+                });
+                
+                return results;
+            }''')
+            
+            if len(jobs_data) > 0:
+                print(f"  Found {len(jobs_data)} relevant scholarships")
+            
+            for job in jobs_data:
+                link = job['link']
+                if link.startswith("/"):
+                    link = "http://scholarshipdb.net" + link
+                
+                self.jobs.append({
+                    "title": job['title'],
+                    "university": job['org'],
+                    "url": link,
+                    "found_date": datetime.now().strftime("%Y-%m-%d"),
+                    "source": "ScholarshipDB"
+                })
+                
+        except Exception as e:
+            print(f"Error scraping ScholarshipDB: {e}")
+
+    async def scrape_jobbnorge(self, page):
+        """Scrape Jobbnorge.no - Norwegian job portal, requires login"""
+        print("Scraping Jobbnorge.no...")
+        
+        try:
+            # Login credentials
+            email = "amehrb@gmail.com"
+            password = "Sullivan198766@!"
+            
+            # Navigate to login page
+            await page.goto("https://www.jobbnorge.no/", timeout=30000)
+            await asyncio.sleep(2)
+            
+            # Try to find and click login button
+            try:
+                login_link = await page.query_selector('a[href*="login"], .login, #login')
+                if login_link:
+                    await login_link.click()
+                    await asyncio.sleep(2)
+                
+                # Fill login form
+                await page.fill('input[type="email"], input[name="email"], input[name="username"]', email)
+                await page.fill('input[type="password"], input[name="password"]', password)
+                await page.click('button[type="submit"], input[type="submit"]')
+                await asyncio.sleep(3)
+                print("  Logged in to Jobbnorge")
+            except Exception as e:
+                print(f"  Login not required or failed: {e}, continuing...")
+            
+            # Search for PhD positions
+            search_url = "https://www.jobbnorge.no/search?q=PhD"
+            await page.goto(search_url, timeout=30000)
+            await asyncio.sleep(2)
+            
+            # Extract job listings
+            jobs_data = await page.evaluate('''() => {
+                const results = [];
+                const items = document.querySelectorAll('.job, .vacancy, article, [class*="job"], .listing');
+                
+                items.forEach(item => {
+                    const titleEl = item.querySelector('h2 a, h3 a, .title a, a[class*="title"]');
+                    if (!titleEl) return;
+                    
+                    const title = titleEl.innerText.trim();
+                    const link = titleEl.href || titleEl.getAttribute('href') || '';
+                    
+                    const orgEl = item.querySelector('.employer, .institution, .university');
+                    const org = orgEl ? orgEl.innerText.trim() : 'Jobbnorge';
+                    
+                    if (title.length > 5 && link && 
+                        (title.toLowerCase().includes('phd') || title.toLowerCase().includes('doctoral'))) {
+                        results.push({ title, link, org });
+                    }
+                });
+                
+                return results;
+            }''')
+            
+            if len(jobs_data) > 0:
+                print(f"  Found {len(jobs_data)} PhD positions")
+            
+            for job in jobs_data:
+                link = job['link']
+                if link.startswith("/"):
+                    link = "https://www.jobbnorge.no" + link
+                
+                self.jobs.append({
+                    "title": job['title'],
+                    "university": job['org'],
+                    "url": link,
+                    "found_date": datetime.now().strftime("%Y-%m-%d"),
+                    "source": "Jobbnorge"
+                })
+                
+        except Exception as e:
+            print(f"Error scraping Jobbnorge: {e}")
+
+    async def scrape_academicpositions_enhanced(self, page):
+        """Enhanced scraping of AcademicPositions.de with pagination"""
+        print("Scraping AcademicPositions.de (enhanced)...")
+        
+        seen_urls = set()
+        
+        # Search multiple pages
+        for page_num in range(1, 4):  # Pages 1-3
+            url = f"https://academicpositions.de/find-jobs?page={page_num}&positions[0]=phd"
+            print(f"  Page {page_num}...")
+            
+            try:
+                await page.goto(url, timeout=30000)
+                await asyncio.sleep(2)
+                
+                # Extract job listings
+                jobs_data = await page.evaluate('''() => {
+                    const results = [];
+                    const items = document.querySelectorAll('.job-listing, article, [class*="job"], .position');
+                    
+                    items.forEach(item => {
+                        const titleEl = item.querySelector('h2 a, h3 a, .title a, a[class*="title"]');
+                        if (!titleEl) return;
+                        
+                        const title = titleEl.innerText.trim();
+                        const link = titleEl.href || titleEl.getAttribute('href') || '';
+                        
+                        const orgEl = item.querySelector('.employer, .university, .institution');
+                        const org = orgEl ? orgEl.innerText.trim() : 'AcademicPositions.de';
+                        
+                        if (title.length > 5 && link) {
+                            results.push({ title, link, org });
+                        }
+                    });
+                    
+                    return results;
+                }''')
+                
+                if len(jobs_data) > 0:
+                    print(f"    Found {len(jobs_data)} positions")
+                
+                for job in jobs_data:
+                    link = job['link']
+                    if link.startswith("/"):
+                        link = "https://academicpositions.de" + link
+                    
+                    if link in seen_urls:
+                        continue
+                    seen_urls.add(link)
+                    
+                    # Check if Germany/Finland focused
+                    text = job['title'].lower() + ' ' + job['org'].lower()
+                    if any(country in text for country in ['germany', 'berlin', 'munich', 'finland', 'helsinki']):
+                        self.jobs.append({
+                            "title": job['title'],
+                            "university": job['org'],
+                            "url": link,
+                            "found_date": datetime.now().strftime("%Y-%m-%d"),
+                            "source": "AcademicPositions.de"
+                        })
+                        
+            except Exception as e:
+                print(f"    Error on page {page_num}: {e}")
+                break  # Stop if page fails
+
     async def scrape(self, browser):
         page = await browser.new_page()
+        # Original scrapers
         await self.scrape_findaphd(page)
         await self.scrape_euraxess(page)
         await self.scrape_academics_de(page)
@@ -487,6 +836,14 @@ class GlobalPortalScraper(BaseScraper):
         await self.scrape_ieee(page)
         await self.scrape_applykite(page)
         await self.scrape_academicpositions(page)
+        
+        # New scrapers (Phase 1 expansion)
+        await self.scrape_owlindex(page)
+        await self.scrape_phdscanner(page)
+        await self.scrape_scholarshipdb(page)
+        await self.scrape_jobbnorge(page)
+        await self.scrape_academicpositions_enhanced(page)
+        
         await page.close()
         return self.jobs
 
