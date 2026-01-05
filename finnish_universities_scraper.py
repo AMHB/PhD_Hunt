@@ -81,26 +81,34 @@ class FinnishUniversitiesScraper:
         
         print(f"Loaded {len(self.universities)} Finnish universities")
     
-    async def scrape_university(self, page, uni):
+    async def scrape_university(self, page, uni, position_type="phd"):
         """Scrape a single Finnish university"""
         name = uni['name']
         job_url = uni['job_url']
         
-        print(f"  Scraping {name}...")
+        print(f"  Scraping {name} ({position_type})...")
         
         try:
             await page.goto(job_url, timeout=30000)
             await asyncio.sleep(2)
             
             # Extract job listings
-            jobs_data = await page.evaluate('''() => {
+            jobs_data = await page.evaluate('''({position_type}) => {
                 const results = [];
                 const seen = new Set();
+                const type = position_type;
                 
-                // PhD keywords
-                const phdKeywords = ['phd', 'ph.d', 'doctoral', 'doctorate', 
-                                    'doctoral student', 'doctoral researcher',
-                                    'graduate student', 'early-stage researcher'];
+                // Keywords
+                let typeKeywords = [];
+                let excludeKeywords = [];
+                
+                if (type === 'phd') {
+                    typeKeywords = ['phd', 'ph.d', 'doctoral', 'doctorate', 'doctoral student', 'doctoral researcher', 'graduate student', 'early-stage researcher'];
+                    excludeKeywords = ['postdoc', 'post-doc', 'professor', 'lecturer'];
+                } else {
+                    typeKeywords = ['postdoc', 'post-doc', 'post doctoral', 'research fellow', 'senior researcher'];
+                    excludeKeywords = ['phd student', 'doctoral student', 'professor'];
+                }
                 
                 // Find all links
                 const links = document.querySelectorAll('a');
@@ -113,13 +121,15 @@ class FinnishUniversitiesScraper:
                         return;
                     }
                     
-                    // Check if it mentions PhD
-                    if (phdKeywords.some(kw => text.includes(kw))) {
-                        seen.add(href);
-                        results.push({
-                            title: link.innerText.trim(),
-                            url: href
-                        });
+                    // Check inclusion/exclusion
+                    if (typeKeywords.some(kw => text.includes(kw))) {
+                        if (!excludeKeywords.some(ex => text.includes(ex))) {
+                            seen.add(href);
+                            results.push({
+                                title: link.innerText.trim(),
+                                url: href
+                            });
+                        }
                     }
                 });
                 
@@ -132,7 +142,11 @@ class FinnishUniversitiesScraper:
                 containers.forEach(container => {
                     const text = container.innerText.toLowerCase();
                     
-                    if (!phdKeywords.some(kw => text.includes(kw))) {
+                    if (!typeKeywords.some(kw => text.includes(kw))) {
+                        return;
+                    }
+                    
+                    if (excludeKeywords.some(ex => text.includes(ex))) {
                         return;
                     }
                     
@@ -142,7 +156,7 @@ class FinnishUniversitiesScraper:
                         
                         const titleEl = container.querySelector('h1, h2, h3, h4, .title');
                         const title = titleEl ? titleEl.innerText.trim() : 
-                                     link.innerText.trim() || 'PhD Position';
+                                     link.innerText.trim() || (type === 'phd' ? 'PhD Position' : 'PostDoc Position');
                         
                         results.push({
                             title: title,
@@ -152,7 +166,7 @@ class FinnishUniversitiesScraper:
                 });
                 
                 return results;
-            }''')
+            }''', position_type)
             
             if len(jobs_data) > 0:
                 print(f"    Found {len(jobs_data)} positions at {name}")
@@ -161,9 +175,12 @@ class FinnishUniversitiesScraper:
                 # Filter
                 title_lower = job['title'].lower()
                 
-                # Skip non-PhD
-                if any(skip in title_lower for skip in ['postdoc', 'professor', 'associate professor']):
-                    continue
+                if position_type == "phd":
+                    if any(skip in title_lower for skip in ['postdoc', 'professor', 'associate professor']):
+                        continue
+                else:
+                     if 'phd student' in title_lower or 'doctoral student' in title_lower:
+                        continue
                 
                 self.jobs.append({
                     "title": job['title'][:200],
@@ -176,16 +193,16 @@ class FinnishUniversitiesScraper:
         except Exception as e:
             print(f"    Error scraping {name}: {e}")
     
-    async def scrape(self, browser):
+    async def scrape(self, browser, position_type="phd"):
         """Scrape all Finnish universities"""
         print("=" * 60)
-        print("SCRAPING FINNISH UNIVERSITIES (12 institutions)")
+        print(f"SCRAPING FINNISH UNIVERSITIES (12 institutions) - Type: {position_type}")
         print("=" * 60)
         
         page = await browser.new_page()
         
         for uni in self.universities:
-            await self.scrape_university(page, uni)
+            await self.scrape_university(page, uni, position_type)
             await asyncio.sleep(1)
         
         await page.close()

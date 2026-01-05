@@ -627,11 +627,15 @@ class GlobalPortalScraper(BaseScraper):
             except Exception as e:
                 print(f"    Error scraping {base_url}: {e}")
 
-    async def scrape_scholarshipdb(self, page):
+    async def scrape_scholarshipdb(self, page, position_type="phd"):
         """Scrape ScholarshipDB.net"""
-        print("Scraping ScholarshipDB.net...")
+        print(f"Scraping ScholarshipDB.net ({position_type})...")
         
-        url = "http://scholarshipdb.net/scholarships/Program-PhD"
+        # Select URL based on position type
+        if position_type == "phd":
+            url = "http://scholarshipdb.net/scholarships/Program-PhD"
+        else:
+            url = "http://scholarshipdb.net/scholarships/Program-Postdoctoral"
         
         try:
             await page.goto(url, timeout=30000)
@@ -761,15 +765,20 @@ class GlobalPortalScraper(BaseScraper):
         except Exception as e:
             print(f"Error scraping Jobbnorge: {e}")
 
-    async def scrape_academicpositions_enhanced(self, page):
+    async def scrape_academicpositions_enhanced(self, page, position_type="phd"):
         """Enhanced scraping of AcademicPositions.de with pagination"""
-        print("Scraping AcademicPositions.de (enhanced)...")
+        print(f"Scraping AcademicPositions.de (enhanced) - Type: {position_type}...")
         
         seen_urls = set()
         
         # Search multiple pages
         for page_num in range(1, 4):  # Pages 1-3
-            url = f"https://academicpositions.de/find-jobs?page={page_num}&positions[0]=phd"
+            if position_type == "phd":
+                url = f"https://academicpositions.de/find-jobs?page={page_num}&positions[0]=phd"
+            else:
+                # Use query for postdoc to be safe as filter ID might vary
+                url = f"https://academicpositions.de/find-jobs?page={page_num}&keywords=postdoc"
+            
             print(f"  Page {page_num}...")
             
             try:
@@ -826,23 +835,25 @@ class GlobalPortalScraper(BaseScraper):
                 print(f"    Error on page {page_num}: {e}")
                 break  # Stop if page fails
 
-    async def scrape(self, browser):
+    async def scrape(self, browser, position_type="phd"):
         page = await browser.new_page()
-        # Original scrapers
+        # Original scrapers (mostly PhD focused, keep as is for now or update later)
         await self.scrape_findaphd(page)
         await self.scrape_euraxess(page)
         await self.scrape_academics_de(page)
         await self.scrape_daad(page)
         await self.scrape_ieee(page)
         await self.scrape_applykite(page)
-        await self.scrape_academicpositions(page)
+        # Updated methods that support position_type
+        await self.scrape_academicpositions_enhanced(page, position_type)
         
         # New scrapers (Phase 1 expansion)
-        await self.scrape_owlindex(page)
-        await self.scrape_phdscanner(page)
-        await self.scrape_scholarshipdb(page)
-        await self.scrape_jobbnorge(page)
-        await self.scrape_academicpositions_enhanced(page)
+        await self.scrape_owlindex(page) # Keyword based, naturally supports both
+        if position_type == "phd":
+            await self.scrape_phdscanner(page) # PhD specific
+        await self.scrape_scholarshipdb(page, position_type)
+        await self.scrape_jobbnorge(page) # General keyword based
+        # await self.scrape_academicpositions_enhanced(page) -> Removed duplicate call
         
         await page.close()
         return self.jobs

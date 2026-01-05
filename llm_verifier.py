@@ -219,7 +219,7 @@ def batch_verify_jobs(jobs: List[Dict], keywords: str, batch_size: int = 20) -> 
     return verified_jobs
 
 
-def deep_verify_positions(jobs: List[Dict], keywords: str) -> List[Dict]:
+def deep_verify_positions(jobs: List[Dict], keywords: str, position_type: str = "phd") -> List[Dict]:
     """
     Phase 5: Deep verification using GPT-4o-mini to score and filter positions.
     This provides more accurate filtering to eliminate false positives.
@@ -227,19 +227,23 @@ def deep_verify_positions(jobs: List[Dict], keywords: str) -> List[Dict]:
     Args:
         jobs: List of job dictionaries
         keywords: Search keywords for relevance checking
+        position_type: 'phd' or 'postdoc'
     
     Returns:
-        Only positions with relevance score >= 6 and confirmed as PhD positions
+        Only positions with relevance score >= 6 and confirmed as valid type
     """
     if not jobs or len(jobs) == 0:
         return []
     
-    print(f"🤖 Deep verifying {len(jobs)} positions with GPT-4o-mini...")
+    print(f"🤖 Deep verifying {len(jobs)} positions ({position_type}) with GPT-4o-mini...")
     
     verified_jobs = []
     
     # Process in batches of 10 for efficiency
     batch_size = 10
+    
+    target_role = "PhD/Doctoral position" if position_type == "phd" else "PostDoc/Tenure Track position"
+    forbidden_role = "PostDoc/Professor" if position_type == "phd" else "PhD Student"
     
     for i in range(0, len(jobs), batch_size):
         batch = jobs[i:i + batch_size]
@@ -253,20 +257,21 @@ def deep_verify_positions(jobs: List[Dict], keywords: str) -> List[Dict]:
             for j, job in enumerate(batch)
         ])
         
-        prompt = f"""You are an expert PhD position validator. For each position below, provide:
-1. is_phd: true/false (Is this genuinely a PhD/doctoral position? NOT postdoc, NOT professor, NOT general program info)
+        prompt = f"""You are an expert academic job validator. For each position below, provide:
+1. is_valid_type: true/false (Is this genuinely a {target_role}? NOT {forbidden_role}, NOT general program info)
 2. relevance_score: 0-10 (How relevant is this to keywords: {keywords})  
 3. reason: Brief justification (max 20 words)
 
 Keywords: {keywords}
+Target Type: {target_role}
 
 Positions to evaluate:
 {jobs_text}
 
 Respond ONLY with valid JSON array like:
 [
-  {{"position": 1, "is_phd": true, "relevance_score": 8, "reason": "PhD position in X field"}},
-  {{"position": 2, "is_phd": false, "relevance_score": 3, "reason": "General program info page"}}
+  {{"position": 1, "is_valid_type": true, "relevance_score": 8, "reason": "Clear match"}},
+  {{"position": 2, "is_valid_type": false, "relevance_score": 3, "reason": "Wrong position type"}}
 ]
 """
         
@@ -298,17 +303,21 @@ Respond ONLY with valid JSON array like:
                 if 0 <= pos_idx < len(batch):
                     job = batch[pos_idx]
                     
-                    is_phd = eval_item.get("is_phd", False)
+                    is_valid = eval_item.get("is_valid_type", False)
+                    # Backward compatibility for old prompt structure if model hallucinates
+                    if "is_phd" in eval_item and position_type == "phd":
+                         is_valid = eval_item["is_phd"]
+                         
                     score = eval_item.get("relevance_score", 0)
                     reason = eval_item.get("reason", "")
                     
-                    # Keep only if it's a PhD position AND score >= 6
-                    if is_phd and score >= 6:
+                    # Keep only if it's a valid position AND score >= 6
+                    if is_valid and score >= 6:
                         job['llm_score'] = score
                         job['llm_reason'] = reason
                         verified_jobs.append(job)
                     else:
-                        print(f"  ❌ Filtered: {job.get('title', '')[:60]}... (PhD:{is_phd}, Score:{score})")
+                        print(f"  ❌ Filtered: {job.get('title', '')[:60]}... (Valid:{is_valid}, Score:{score})")
             
         except Exception as e:
             print(f"  ⚠️ Deep verification batch failed: {e}")

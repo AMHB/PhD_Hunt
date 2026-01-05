@@ -201,7 +201,7 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
             print("\n🇩🇪 Running German Universities Scraper (35+ institutions)...")
             try:
                 german_scraper = GermanUniversitiesScraper(analyzer)
-                german_jobs = await german_scraper.scrape(context)
+                german_jobs = await german_scraper.scrape(context, position_type)
                 all_found_jobs.extend(german_jobs)
                 print(f"✓ Found {len(german_jobs)} jobs from German universities")
             except Exception as e:
@@ -211,7 +211,7 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
             print("\n🇫🇮 Running Finnish Universities Scraper (12 institutions)...")
             try:
                 finnish_scraper = FinnishUniversitiesScraper(analyzer)
-                finnish_jobs = await finnish_scraper.scrape(context)
+                finnish_jobs = await finnish_scraper.scrape(context, position_type)
                 all_found_jobs.extend(finnish_jobs)
                 print(f"✓ Found {len(finnish_jobs)} jobs from Finnish universities")
             except Exception as e:
@@ -283,7 +283,7 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
             try:
                 verification_keywords = custom_keywords if custom_keywords else "PhD research position"
                 # Use deep verification instead of basic batch verification
-                verified_jobs = deep_verify_positions(all_found_jobs, verification_keywords)
+                verified_jobs = deep_verify_positions(all_found_jobs, verification_keywords, position_type)
                 print(f"✅ After deep verification: {len(verified_jobs)} valid jobs")
                 print(f"🗑️  Filtered out: {len(all_found_jobs) - len(verified_jobs)} false positives")
                 all_found_jobs = verified_jobs
