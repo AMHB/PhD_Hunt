@@ -1,0 +1,261 @@
+[
+    {
+        "name": "RWTH Aachen University",
+        "base_url": "https://www.rwth-aachen.de",
+        "job_portal_url": "https://www.rwth-aachen.de/cms/root/wir/karriere/~buym/rwth-jobportal/?lidx=1&search=Phd",
+        "faculty": "Electrical Engineering & Info Tech",
+        "country": "Germany"
+    },
+    {
+        "name": "Technical University of Munich (TUM)",
+        "base_url": "https://www.tum.de",
+        "job_portal_url": "https://www.cit.tum.de/en/cit/research/doctorate/",
+        "faculty": "ECE",
+        "country": "Germany"
+    },
+    {
+        "name": "TU Berlin",
+        "base_url": "https://www.tu-berlin.de",
+        "job_portal_url": "https://www.jobs.tu-berlin.de/",
+        "faculty": "EECS",
+        "country": "Germany"
+    },
+    {
+        "name": "TU Dresden",
+        "base_url": "https://tu-dresden.de",
+        "job_portal_url": "https://tu-dresden.de/ing/elektrotechnik/postgraduales/promotion?set_language=en",
+        "faculty": "EE & CS",
+        "country": "Germany"
+    },
+    {
+        "name": "Karlsruhe Institute of Technology (KIT)",
+        "base_url": "https://www.kit.edu",
+        "job_portal_url": "https://www.kit.edu/kit/stellenangebote.php",
+        "faculty": "EE & IT",
+        "country": "Germany"
+    },
+    {
+        "name": "Technical University Darmstadt",
+        "base_url": "https://www.tu-darmstadt.de",
+        "job_portal_url": "https://www.tu-darmstadt.de/karriere/stellenticket/index.en.jsp",
+        "faculty": "CS / ECE",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Stuttgart",
+        "base_url": "https://www.uni-stuttgart.de",
+        "job_portal_url": "https://www.uni-stuttgart.de/en/jobs/",
+        "faculty": "ECE & CS",
+        "country": "Germany"
+    },
+    {
+        "name": "Technical University Ilmenau",
+        "base_url": "https://www.tu-ilmenau.de",
+        "job_portal_url": "https://www.tu-ilmenau.de/en/university/jobs/",
+        "faculty": "ECE/IT",
+        "country": "Germany"
+    },
+    {
+        "name": "Ruhr University Bochum",
+        "base_url": "https://www.ruhr-uni-bochum.de",
+        "job_portal_url": "https://www.ruhr-uni-bochum.de/en/stellenangebote/",
+        "faculty": "ECE/CompSci",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Bremen",
+        "base_url": "https://www.uni-bremen.de",
+        "job_portal_url": "https://www.uni-bremen.de/en/career",
+        "faculty": "ECE/CompSci",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Erlangen-Nürnberg (FAU)",
+        "base_url": "https://www.fau.de",
+        "job_portal_url": "https://www.fau.de/university/jobs/",
+        "faculty": "EE & CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Hamburg",
+        "base_url": "https://www.uni-hamburg.de",
+        "job_portal_url": "https://www.uni-hamburg.de/en/campuscenter/jobs.html",
+        "faculty": "Eng & CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Freiburg",
+        "base_url": "https://www.uni-freiburg.de",
+        "job_portal_url": "https://www.uni-freiburg.de/en/university/career",
+        "faculty": "Eng & CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Bonn",
+        "base_url": "https://www.uni-bonn.de",
+        "job_portal_url": "https://www.uni-bonn.de/en/university/administration/career",
+        "faculty": "CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Münster",
+        "base_url": "https://www.uni-muenster.de",
+        "job_portal_url": "https://www.uni-muenster.de/en/jobs/",
+        "faculty": "CS & Eng",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Leipzig",
+        "base_url": "https://www.uni-leipzig.de",
+        "job_portal_url": "https://www.uni-leipzig.de/en/university/jobs/",
+        "faculty": "CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Konstanz",
+        "base_url": "https://www.uni-konstanz.de",
+        "job_portal_url": "https://www.uni-konstanz.de/en/university/jobs/",
+        "faculty": "CS/Data Science",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Potsdam",
+        "base_url": "https://www.uni-potsdam.de",
+        "job_portal_url": "https://www.uni-potsdam.de/en/jobs",
+        "faculty": "CS",
+        "country": "Germany"
+    },
+    {
+        "name": "Technical University Kaiserslautern-Landau (RPTU)",
+        "base_url": "https://www.rptu.de",
+        "job_portal_url": "https://www.rptu.de/en/University/Jobs/",
+        "faculty": "EIT/CompSci",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Würzburg",
+        "base_url": "https://www.uni-wuerzburg.de",
+        "job_portal_url": "https://www.uni-wuerzburg.de/en/career/",
+        "faculty": "Eng & CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Magdeburg",
+        "base_url": "https://www.uni-magdeburg.de",
+        "job_portal_url": "https://www.uni-magdeburg.de/en/jobs/",
+        "faculty": "EE / CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Kassel",
+        "base_url": "https://www.uni-kassel.de",
+        "job_portal_url": "https://www.uni-kassel.de/uni/stellen",
+        "faculty": "CompSci",
+        "country": "Germany"
+    },
+    {
+        "name": "Technical University Dortmund",
+        "base_url": "https://www.tu-dortmund.de",
+        "job_portal_url": "https://www.tu-dortmund.de/en/career/",
+        "faculty": "EE & IT",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Halle-Wittenberg",
+        "base_url": "https://www.uni-halle.de",
+        "job_portal_url": "https://www.uni-halle.de/en/jobs/",
+        "faculty": "CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Rostock",
+        "base_url": "https://www.uni-rostock.de",
+        "job_portal_url": "https://www.uni-rostock.de/en/jobs/",
+        "faculty": "Eng & CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Marburg",
+        "base_url": "https://www.uni-marburg.de",
+        "job_portal_url": "https://www.uni-marburg.de/en/university/jobs",
+        "faculty": "CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Ulm",
+        "base_url": "https://www.uni-ulm.de",
+        "job_portal_url": "https://www.uni-ulm.de/en/university/jobs/",
+        "faculty": "Math & CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Tübingen",
+        "base_url": "https://www.uni-tuebingen.de",
+        "job_portal_url": "https://www.uni-tuebingen.de/en/jobs",
+        "faculty": "CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Göttingen",
+        "base_url": "https://www.uni-goettingen.de",
+        "job_portal_url": "https://www.uni-goettingen.de/en/career/",
+        "faculty": "NatSci/CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Jena",
+        "base_url": "https://www.uni-jena.de",
+        "job_portal_url": "https://www.uni-jena.de/en/jobs/",
+        "faculty": "ECE/CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Regensburg",
+        "base_url": "https://www.uni-regensburg.de",
+        "job_portal_url": "https://www.uni-regensburg.de/en/career",
+        "faculty": "Eng/CS",
+        "country": "Germany"
+    },
+    {
+        "name": "University of Hohenheim",
+        "base_url": "https://www.uni-hohenheim.de",
+        "job_portal_url": "https://www.uni-hohenheim.de/en/jobs/",
+        "faculty": "NatSci/Eng",
+        "country": "Germany"
+    },
+    {
+        "name": "HTW Berlin (Univ of Applied Sci)",
+        "base_url": "https://www.htw-berlin.de",
+        "job_portal_url": "https://www.htw-berlin.de/en/jobs/",
+        "faculty": "Eng/CS",
+        "country": "Germany"
+    },
+    {
+        "name": "Hochschule Darmstadt (h_da)",
+        "base_url": "https://www.h_da.de",
+        "job_portal_url": "https://www.h_da.de/en/Jobs/",
+        "faculty": "Eng/IT",
+        "country": "Germany"
+    },
+    {
+        "name": "FH Aachen (Univ of Applied Sci)",
+        "base_url": "https://www.fh-ac.de",
+        "job_portal_url": "https://www.fh-ac.de/en/jobs/",
+        "faculty": "Eng/IT",
+        "country": "Germany"
+    },
+    {
+        "name": "FH Köln",
+        "base_url": "https://www.fh-koeln.de",
+        "job_portal_url": "https://www.fh-koeln.de/en/jobs/",
+        "faculty": "Eng/IT",
+        "country": "Germany"
+    },
+    {
+        "name": "FH Munich (Hochschule München)",
+        "base_url": "https://www.hm.edu",
+        "job_portal_url": "https://www.hm.edu/department/jobs/",
+        "faculty": "Eng/IT",
+        "country": "Germany"
+    }
+]
