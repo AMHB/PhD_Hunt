@@ -858,9 +858,9 @@ class DeepUniversityCrawler(BaseScraper):
         super().__init__(analyzer)
         self.universities = universities
         
-        # Crawling configuration
-        self.max_depth = 3          # How many levels deep to crawl
-        self.max_pages = 50         # Max pages per university (reduced for reasonable time)
+        # Crawling configuration (Enhanced for Phase 4)
+        self.max_depth = 4          # How many levels deep to crawl (increased from 3)
+        self.max_pages = 150        # Max pages per university (increased from 50)
         self.crawl_delay = 0.3      # Seconds between requests
         
         # High-priority URL patterns (crawl first)

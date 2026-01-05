@@ -217,3 +217,103 @@ def batch_verify_jobs(jobs: List[Dict], keywords: str, batch_size: int = 20) -> 
         verified_jobs.extend(verified_batch)
     
     return verified_jobs
+
+
+def deep_verify_positions(jobs: List[Dict], keywords: str) -> List[Dict]:
+    """
+    Phase 5: Deep verification using GPT-4o-mini to score and filter positions.
+    This provides more accurate filtering to eliminate false positives.
+    
+    Args:
+        jobs: List of job dictionaries
+        keywords: Search keywords for relevance checking
+    
+    Returns:
+        Only positions with relevance score >= 6 and confirmed as PhD positions
+    """
+    if not jobs or len(jobs) == 0:
+        return []
+    
+    print(f"🤖 Deep verifying {len(jobs)} positions with GPT-4o-mini...")
+    
+    verified_jobs = []
+    
+    # Process in batches of 10 for efficiency
+    batch_size = 10
+    
+    for i in range(0, len(jobs), batch_size):
+        batch = jobs[i:i + batch_size]
+        
+        # Prepare batch for verification
+        jobs_text = "\n\n".join([
+            f"Position {j+1}:\n"
+            f"Title: {job.get('title', 'N/A')}\n"
+            f"University: {job.get('university', job.get('institution', 'N/A'))}\n"
+            f"URL: {job.get('url', 'N/A')}"
+            for j, job in enumerate(batch)
+        ])
+        
+        prompt = f"""You are an expert PhD position validator. For each position below, provide:
+1. is_phd: true/false (Is this genuinely a PhD/doctoral position? NOT postdoc, NOT professor, NOT general program info)
+2. relevance_score: 0-10 (How relevant is this to keywords: {keywords})  
+3. reason: Brief justification (max 20 words)
+
+Keywords: {keywords}
+
+Positions to evaluate:
+{jobs_text}
+
+Respond ONLY with valid JSON array like:
+[
+  {{"position": 1, "is_phd": true, "relevance_score": 8, "reason": "PhD position in X field"}},
+  {{"position": 2, "is_phd": false, "relevance_score": 3, "reason": "General program info page"}}
+]
+"""
+        
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a PhD job listing expert. Respond only with valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=1000
+            )
+            
+            import json
+            result_text = response.choices[0].message.content.strip()
+            
+            # Extract JSON from response
+            if "```json" in result_text:
+                result_text = result_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in result_text:
+                result_text = result_text.split("```")[1].split("```")[0].strip()
+            
+            evaluations = json.loads(result_text)
+            
+            # Filter based on criteria
+            for eval_item in evaluations:
+                pos_idx = eval_item.get("position", 0) - 1
+                if 0 <= pos_idx < len(batch):
+                    job = batch[pos_idx]
+                    
+                    is_phd = eval_item.get("is_phd", False)
+                    score = eval_item.get("relevance_score", 0)
+                    reason = eval_item.get("reason", "")
+                    
+                    # Keep only if it's a PhD position AND score >= 6
+                    if is_phd and score >= 6:
+                        job['llm_score'] = score
+                        job['llm_reason'] = reason
+                        verified_jobs.append(job)
+                    else:
+                        print(f"  ❌ Filtered: {job.get('title', '')[:60]}... (PhD:{is_phd}, Score:{score})")
+            
+        except Exception as e:
+            print(f"  ⚠️ Deep verification batch failed: {e}")
+            # If verification fails, keep all (fail-safe)
+            verified_jobs.extend(batch)
+    
+    print(f"✅ Deep verification: {len(verified_jobs)}/{len(jobs)} positions passed filtering")
+    return verified_jobs

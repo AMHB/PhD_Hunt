@@ -10,7 +10,7 @@ from scraper import GlobalPortalScraper, UniversityScraper, ResearchGateScraper
 from analyzer import KeywordAnalyzer
 from utils import StateManager, EmailSender, is_phd_only, is_postdoc_only
 from linkedin_scraper import LinkedInScraper
-from llm_verifier import batch_verify_jobs, verify_job_history
+from llm_verifier import batch_verify_jobs, verify_job_history, deep_verify_positions
 from link_validator import validate_links_batch
 from faculty_scraper import FacultyScraper, load_universities_from_file
 from inquiry_detector import InquiryDetector
@@ -279,15 +279,16 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
         print(f"\n📊 Jobs for LLM verification: {len(all_found_jobs)}")
         
         if all_found_jobs:
-            print("\n🤖 Running LLM verification (ChatGPT filtering)...")
+            print("\n🤖 Running Deep LLM Verification (Phase 5 - Enhanced)...")
             try:
                 verification_keywords = custom_keywords if custom_keywords else "PhD research position"
-                verified_jobs = batch_verify_jobs(all_found_jobs, verification_keywords)
-                print(f"✅ After LLM verification: {len(verified_jobs)} valid jobs")
-                print(f"🗑️  Removed: {len(all_found_jobs) - len(verified_jobs)} invalid/duplicate jobs")
+                # Use deep verification instead of basic batch verification
+                verified_jobs = deep_verify_positions(all_found_jobs, verification_keywords)
+                print(f"✅ After deep verification: {len(verified_jobs)} valid jobs")
+                print(f"🗑️  Filtered out: {len(all_found_jobs) - len(verified_jobs)} false positives")
                 all_found_jobs = verified_jobs
             except Exception as e:
-                print(f"⚠️ LLM verification failed: {str(e)}")
+                print(f"⚠️ Deep LLM verification failed: {str(e)}")
                 print("   Proceeding with unverified jobs...")
         
         # 5. Filter positions based on position_type
