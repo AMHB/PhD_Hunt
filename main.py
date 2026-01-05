@@ -364,7 +364,7 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
         print("\n⚠️ Skipped email (credentials not found in .env)")
 
 def run_with_notifications(recipient_email=None, custom_keywords=None, job_id=None, position_type="phd",
-                           search_types="open"):
+                           search_types="open", use_ai_crawler=False):
     """Wrapper that sends status emails on start, crash, and success"""
     from job_queue import acquire_lock, release_lock, is_locked, get_lock_info
     
@@ -406,7 +406,8 @@ def run_with_notifications(recipient_email=None, custom_keywords=None, job_id=No
             position_type,
             search_open_positions,
             search_inquiry_positions,
-            search_professors
+            search_professors,
+            use_ai_crawler
         ))
         
         # Send SUCCESS notification (to owner only)
@@ -431,6 +432,7 @@ if __name__ == "__main__":
                         choices=["phd", "postdoc"], help="Position type: phd or postdoc")
     parser.add_argument("--search-types", "-s", type=str, default="open",
                         help="Search types: comma-separated (open,inquiry,professors)")
+    parser.add_argument("--ai-powered", action="store_true", help="Enable AI-powered crawler (Gemini)")
     
     args = parser.parse_args()
     
@@ -439,5 +441,6 @@ if __name__ == "__main__":
         args.keywords, 
         args.job_id, 
         args.position_type,
-        args.search_types
+        args.search_types,
+        args.ai_powered
     )
