@@ -10,6 +10,11 @@ import json
 import hashlib
 from datetime import datetime
 from functools import wraps
+import smtplib
+from email.mime.text import MIMEText
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'phd_hunter_secret_key_2024_secure_session'
@@ -747,6 +752,44 @@ def run_agent_background(keywords="", recipient_email=""):
     
     run_status["is_running"] = False
 
+def send_termination_email(recipient_email, job_info):
+    """Send an email notification that the job was manually terminated"""
+    gmail_user = os.getenv("GMAIL_USER")
+    gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
+    
+    if not gmail_user or not gmail_pass or not recipient_email:
+        return
+
+    subject = "🛑 PhD Agent - Search Terminated Manually"
+    
+    start_time = job_info.get('started_at_str', 'Unknown')
+    keywords = job_info.get('keywords', 'Unknown')
+    
+    body = f"""
+    The PhD Headhunter Agent search was manually terminated by the user via the dashboard.
+    
+    Job Details:
+    - Started: {start_time}
+    - Keywords: {keywords}
+    - Status: Terminated/Cancelled
+    
+    No further results will be sent for this session.
+    """
+    
+    try:
+        msg = MIMEText(body)
+        msg["Subject"] = subject
+        msg["From"] = gmail_user
+        msg["To"] = recipient_email
+        
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(gmail_user, gmail_pass)
+        server.send_message(msg)
+        server.quit()
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
 # ==================== ROUTES ====================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1081,6 +1124,16 @@ def terminate():
     # Kill the running process if exists
     with current_process_lock:
         if current_process:
+            # Try to send email notification before killing
+            try:
+                lock_info = get_lock_info()
+                if lock_info and lock_info.get('recipient'):
+                     # Run in separate thread to not block termination
+                     threading.Thread(target=send_termination_email, 
+                                    args=(lock_info.get('recipient'), lock_info)).start()
+            except Exception as e:
+                print(f"Failed to send termination email: {e}")
+
             try:
                 current_process.terminate()
                 current_process.wait(timeout=5)
