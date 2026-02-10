@@ -4,13 +4,23 @@ Uses ChatGPT to verify and filter job postings before sending emails.
 """
 import os
 from typing import List, Dict
-from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+def _get_openai_client():
+    """
+    Lazily create an OpenAI client only when an API key exists.
+    This keeps non-LLM parts of the system usable without OPENAI_API_KEY.
+    """
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return None
+    try:
+        from openai import OpenAI
+        return OpenAI(api_key=api_key)
+    except Exception:
+        return None
 
 
 def verify_jobs_with_llm(jobs: List[Dict], keywords: str) -> List[Dict]:
@@ -56,6 +66,10 @@ If ALL jobs are invalid, respond with: []
 """
     
     try:
+        client = _get_openai_client()
+        if not client:
+            raise RuntimeError("OPENAI_API_KEY not set (LLM verification disabled)")
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -88,7 +102,7 @@ If ALL jobs are invalid, respond with: []
         return unique_jobs
         
     except Exception as e:
-        print(f"⚠️ LLM verification failed: {str(e)}")
+        print(f"⚠️ LLM verification skipped/failed: {str(e)}")
         print("Falling back to basic deduplication...")
         
         # Fallback: Just remove duplicates
@@ -156,6 +170,10 @@ Array must have exactly {len(jobs)} scores.
 """
     
     try:
+        client = _get_openai_client()
+        if not client:
+            raise RuntimeError("OPENAI_API_KEY not set (LLM verification disabled)")
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -192,8 +210,8 @@ Array must have exactly {len(jobs)} scores.
         return relevant_jobs
         
     except Exception as e:
-        print(f"⚠️ LLM relevance scoring failed: {str(e)}")
-        print("Returning all jobs without filtering...")
+        print(f"⚠️ LLM relevance scoring skipped/failed: {str(e)}")
+        print("Returning all jobs without LLM filtering...")
         return jobs
 
 
@@ -276,6 +294,10 @@ Respond ONLY with valid JSON array like:
 """
         
         try:
+            client = _get_openai_client()
+            if not client:
+                raise RuntimeError("OPENAI_API_KEY not set (LLM verification disabled)")
+
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
@@ -311,8 +333,9 @@ Respond ONLY with valid JSON array like:
                     score = eval_item.get("relevance_score", 0)
                     reason = eval_item.get("reason", "")
                     
-                    # Keep only if it's a valid position AND score >= 6
-                    if is_valid and score >= 6:
+                    # Keep only if it's a valid position AND score is high enough
+                    # Stricter threshold (>= 8) to reduce noisy / generic links
+                    if is_valid and score >= 8:
                         job['llm_score'] = score
                         job['llm_reason'] = reason
                         verified_jobs.append(job)
@@ -320,8 +343,8 @@ Respond ONLY with valid JSON array like:
                         print(f"  ❌ Filtered: {job.get('title', '')[:60]}... (Valid:{is_valid}, Score:{score})")
             
         except Exception as e:
-            print(f"  ⚠️ Deep verification batch failed: {e}")
-            # If verification fails, keep all (fail-safe)
+            print(f"  ⚠️ Deep verification skipped/failed: {e}")
+            # If verification is disabled or fails, keep all (fail-safe)
             verified_jobs.extend(batch)
     
     print(f"✅ Deep verification: {len(verified_jobs)}/{len(jobs)} positions passed filtering")

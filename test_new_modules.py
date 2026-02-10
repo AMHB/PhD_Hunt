@@ -25,7 +25,7 @@ def test_inquiry_detector():
     """
     
     result = detector.scan_page_for_inquiry_signals(test_text)
-    print(f"\n✓ Test 1a - Positive Signal Detection:")
+    print(f"\n[OK] Test 1a - Positive Signal Detection:")
     print(f"  Has signal: {result['has_signal']}")
     print(f"  Patterns matched: {len(result['matched_patterns'])}")
     print(f"  Signal strength: {result.get('signal_strength', 0)}")
@@ -33,21 +33,21 @@ def test_inquiry_detector():
     # Test negative signal
     test_text_neg = "No longer accepting applications for this year."
     result_neg = detector.scan_page_for_inquiry_signals(test_text_neg)
-    print(f"\n✓ Test 1b - Negative Signal Rejection:")
+    print(f"\n[OK] Test 1b - Negative Signal Rejection:")
     print(f"  Has signal: {result_neg['has_signal']} (should be False)")
     
     # Test contact extraction
     contact = detector.extract_contact_info(test_text)
-    print(f"\n✓ Test 1c - Contact Extraction:")
+    print(f"\n[OK] Test 1c - Contact Extraction:")
     print(f"  Email: {contact.get('email', 'Not found')}")
     
     # Test URL relevance
     relevant = detector.is_relevant_page_type("/faculty/john-smith", "Prof. John Smith")
-    print(f"\n✓ Test 1d - Page Relevance:")
+    print(f"\n[OK] Test 1d - Page Relevance:")
     print(f"  Is faculty page relevant: {relevant}")
     
     print("\n" + "=" * 60)
-    print("✅ Inquiry Detector Tests Complete")
+    print("[OK] Inquiry Detector Tests Complete")
     print("=" * 60)
 
 def test_llm_verifier():
@@ -78,22 +78,22 @@ def test_llm_verifier():
         }
     ]
     
-    print("\n⚠️ Note: This test requires OpenAI API key to run.")
+    print("\n[NOTE] This test requires OpenAI API key to run.")
     print("If API key is not set, the test will be skipped.")
     
     import os
     if os.getenv("OPENAI_API_KEY"):
-        print("\n✓ Running LLM verification test...")
+        print("\n[OK] Running LLM verification test...")
         verified = verify_job_history(sample_jobs, "machine learning, deep learning", relevance_threshold=5)
-        print(f"\n✓ Test Result:")
+        print(f"\n[OK] Test Result:")
         print(f"  Original jobs: {len(sample_jobs)}")
         print(f"  After filtering: {len(verified)}")
         print(f"  Filtered out: {len(sample_jobs) - len(verified)}")
     else:
-        print("\n⚠️ Skipping LLM test (no API key found)")
+        print("\n[SKIP] Skipping LLM test (no API key found)")
     
     print("\n" + "=" * 60)
-    print("✅ LLM Verifier Tests Complete")
+    print("[OK] LLM Verifier Tests Complete")
     print("=" * 60)
 
 def test_keyword_analyzer():
@@ -105,7 +105,7 @@ def test_keyword_analyzer():
     analyzer = KeywordAnalyzer()
     
     # Test default keywords
-    print(f"\n✓ Default categories loaded: {len(analyzer.categories)}")
+    print(f"\n[OK] Default categories loaded: {len(analyzer.categories)}")
     for category in list(analyzer.categories.keys())[:3]:
         print(f"  - {category}: {len(analyzer.categories[category])} keywords")
     
@@ -117,7 +117,7 @@ def test_keyword_analyzer():
     pattern = r"(?i)\b(" + "|".join([re.escape(k) for k in custom_keywords]) + r")\b"
     analyzer.compiled_patterns["Custom"] = re.compile(pattern)
     
-    print(f"\n✓ Custom keywords set: {', '.join(custom_keywords)}")
+    print(f"\n[OK] Custom keywords set: {', '.join(custom_keywords)}")
     
     # Test matching
     test_text = "Our lab focuses on quantum computing and blockchain technologies."
@@ -127,10 +127,10 @@ def test_keyword_analyzer():
             matches_found = True
             break
     
-    print(f"✓ Keyword matching works: {matches_found}")
+    print(f"[OK] Keyword matching works: {matches_found}")
     
     print("\n" + "=" * 60)
-    print("✅ Keyword Analyzer Tests Complete")
+    print("[OK] Keyword Analyzer Tests Complete")
     print("=" * 60)
 
 def main():
@@ -150,16 +150,16 @@ def main():
         test_keyword_analyzer()
         
         print("\n" + "=" * 80)
-        print("✅ ALL TESTS COMPLETED SUCCESSFULLY!")
+        print("[OK] ALL TESTS COMPLETED SUCCESSFULLY!")
         print("=" * 80)
-        print("\n📝 Summary:")
-        print("  ✓ Inquiry Detector: Pattern matching and contact extraction working")
-        print("  ✓ LLM Verifier: Relevance scoring system ready")
-        print("  ✓ Keyword Analyzer: Custom keyword matching functional")
-        print("\n🚀 The enhanced modules are ready for deployment!")
+        print("\nSummary:")
+        print("  [OK] Inquiry Detector: Pattern matching and contact extraction working")
+        print("  [OK] LLM Verifier: Relevance scoring system ready")
+        print("  [OK] Keyword Analyzer: Custom keyword matching functional")
+        print("\n[OK] The enhanced modules are ready for deployment!")
         
     except Exception as e:
-        print(f"\n❌ Test failed with error: {str(e)}")
+        print(f"\n[FAIL] Test failed with error: {str(e)}")
         import traceback
         traceback.print_exc()
 

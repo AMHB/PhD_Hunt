@@ -5,6 +5,7 @@ import argparse
 import traceback
 import sys
 from datetime import datetime
+from urllib.parse import urlparse
 from playwright.async_api import async_playwright
 from scraper import GlobalPortalScraper, UniversityScraper, ResearchGateScraper
 from analyzer import KeywordAnalyzer
@@ -22,6 +23,59 @@ import smtplib
 from email.mime.text import MIMEText
 
 load_dotenv()
+
+def looks_like_detail_page(url: str) -> bool:
+    """
+    Heuristic filter to distinguish concrete job posting pages from
+    generic portals/search results (which tend to be irrelevant/noisy).
+
+    Returns True only for URLs that look like individual postings.
+    """
+    if not url or not isinstance(url, str):
+        return False
+
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False
+
+    path = (parsed.path or "").lower()
+    if not path or path == "/":
+        # Homepage or empty path – almost never a specific posting
+        return False
+
+    cleaned_path = path.rstrip("/")
+
+    # Very generic listing/portal paths – treat them as non‑detail
+    generic_fragments = [
+        "/jobs",
+        "/job",
+        "/find-jobs",
+        "/vacancies",
+        "/vacancy",
+        "/career",
+        "/careers",
+        "/positions",
+        "/open-positions",
+        "/phd-positions",
+        "/phd",
+        "/search",
+    ]
+
+    for frag in generic_fragments:
+        if cleaned_path == frag:
+            return False
+        # e.g. "/jobs" or "/jobs/" or "/jobs?page=2" → low‑signal listing
+        if cleaned_path.startswith(frag + "/") and cleaned_path.count("/") <= frag.count("/") + 1:
+            return False
+
+    # Require some specificity: either a numeric ID or a long descriptive slug
+    parts = [p for p in cleaned_path.split("/") if p]
+    has_numeric_id = any(part.isdigit() and len(part) >= 3 for part in parts)
+    long_slug = any(len(part) > 20 for part in parts)
+
+    return has_numeric_id or long_slug
+
 
 # Owner email for status notifications (always goes here)
 OWNER_EMAIL = "amehrb@gmail.com"
@@ -269,8 +323,20 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
         
         await browser.close()
     
-    # 3. Link Validation - Filter out broken/dead links BEFORE LLM verification (only for open positions)
+    # 3. URL-shape filtering + Link Validation (only for open positions)
     if search_open_positions:
+        # First, drop URLs that clearly look like generic portals or search pages
+        if all_found_jobs:
+            before_url_filter = len(all_found_jobs)
+            all_found_jobs = [
+                job for job in all_found_jobs
+                if looks_like_detail_page(job.get("url", ""))
+            ]
+            print(
+                f"\n🧹 URL shape filter: kept {len(all_found_jobs)} "
+                f"of {before_url_filter} candidates with detail-like URLs"
+            )
+
         print(f"\n📊 Total jobs found (before validation): {len(all_found_jobs)}")
         
         if all_found_jobs:
