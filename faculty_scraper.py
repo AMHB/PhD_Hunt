@@ -32,7 +32,7 @@ class FacultyScraper:
         self.professors = []
         self.inquiry_opportunities = []
         
-        # Common faculty directory URL patterns
+        # Common faculty directory URL patterns (German + Finnish + English)
         self.faculty_url_patterns = [
             "/faculty",
             "/people",
@@ -44,6 +44,11 @@ class FacultyScraper:
             "/mitarbeiter",  # German
             "/department/people",
             "/research/people",
+            # Finnish patterns
+            "/henkilokunta",
+            "/tutkijat",
+            "/research-groups",
+            "/our-people",
         ]
         
     async def find_faculty_directory(self, page: Page, university_url: str) -> Optional[str]:
@@ -257,17 +262,7 @@ class FacultyScraper:
     
     def _matches_keywords(self, text: str) -> bool:
         """Check if text contains any of the search keywords"""
-        if not text:
-            return False
-        
-        text_lower = text.lower()
-        
-        # Check against analyzer keywords
-        for keyword in self.analyzer.keywords:
-            if keyword.lower() in text_lower:
-                return True
-        
-        return False
+        return self.analyzer.is_relevant(text) if text else False
     
     async def scrape_university(self, page: Page, university_url: str, university_name: str, country: str):
         """
@@ -308,7 +303,8 @@ class FacultyScraper:
         print(f"\n{'='*60}")
         print(f"🎓 FACULTY SCRAPER - Finding professors in your field")
         print(f"{'='*60}")
-        print(f"Keywords: {', '.join(self.analyzer.keywords[:5])}")
+        kw = self.analyzer.get_all_keywords()[:5]
+        print(f"Keywords: {', '.join(kw) if kw else 'default categories'}")
         print(f"Universities to scrape: {len(self.universities)}")
         
         for i, university_data in enumerate(self.universities[:20], 1):  # Limit to 20 universities
@@ -370,14 +366,21 @@ def load_universities_from_file(filename: str = "universities.txt") -> List[Dict
             if len(parts) >= 2:
                 universities.append({
                     "name": parts[0],
-                    "url": parts[1],
+                    "url": parts[1] if parts[1].startswith("http") else f"https://{parts[1]}",
                     "country": parts[2] if len(parts) > 2 else "Unknown"
                 })
             elif line.startswith("http"):
-                # Just a URL
                 universities.append({
                     "name": urlparse(line).netloc,
                     "url": line,
+                    "country": "Unknown"
+                })
+            else:
+                # Domain only (e.g. aalto.fi)
+                domain = line
+                universities.append({
+                    "name": domain,
+                    "url": f"https://www.{domain}",
                     "country": "Unknown"
                 })
     

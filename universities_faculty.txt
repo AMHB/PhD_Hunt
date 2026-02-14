@@ -1,0 +1,28 @@
+# Faculty/Professor directory URLs for PhD Hunt
+# Format: University Name | Base URL | Country
+# Finland is prioritized for professor and inquiry detection
+
+# === FINLAND (Priority Focus) ===
+University of Helsinki | https://www.helsinki.fi/en | Finland
+Aalto University | https://www.aalto.fi/en | Finland
+University of Turku | https://www.utu.fi/en | Finland
+University of Oulu | https://www.oulu.fi/en | Finland
+Tampere University | https://www.tuni.fi/en | Finland
+University of Jyväskylä | https://www.jyu.fi/en | Finland
+University of Eastern Finland | https://www.uef.fi/en | Finland
+LUT University | https://www.lut.fi/en | Finland
+University of Vaasa | https://www.uwasa.fi/en | Finland
+Åbo Akademi University | https://www.abo.fi/en | Finland
+University of Lapland | https://www.ulapland.fi/EN | Finland
+
+# === GERMANY ===
+TU Munich | https://www.tum.de/en | Germany
+RWTH Aachen | https://www.rwth-aachen.de | Germany
+TU Berlin | https://www.tu.berlin/en | Germany
+TU Dresden | https://tu-dresden.de | Germany
+KIT Karlsruhe | https://www.kit.edu/english | Germany
+University of Stuttgart | https://www.uni-stuttgart.de/en | Germany
+University of Hamburg | https://www.uni-hamburg.de/en | Germany
+University of Bonn | https://www.uni-bonn.de/en | Germany
+University of Freiburg | https://uni-freiburg.de/en | Germany
+University of Tübingen | https://uni-tuebingen.de/en | Germany

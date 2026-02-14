@@ -50,3 +50,16 @@ class KeywordAnalyzer:
         Returns True if at least one keyword matches.
         """
         return len(self.analyze_text(text)) > 0
+
+    def get_all_keywords(self):
+        """Return flat list of all keywords for faculty matching."""
+        keywords = []
+        for phrases in self.categories.values():
+            for p in phrases:
+                if isinstance(p, str) and p.strip():
+                    keywords.append(p.strip())
+        return keywords
+
+    def calculate_relevance(self, text):
+        """Return number of keyword matches (for ResearchGate compatibility)."""
+        return len(self.analyze_text(text)) if text else 0

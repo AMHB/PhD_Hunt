@@ -10,7 +10,7 @@
 
 -   **Multi-Source Aggregation**:
     -   Scrapes major global portals (e.g., OwlIndex, PhDScanner, ScholarshipDB, AcademicPositions).
-    -   Specialized scrapers for **German** (35+ institutions) and **Finnish** (12+ institutions) universities.
+    -   Specialized scrapers for **Finnish** (12 institutions, priority focus) and **German** (35+ institutions) universities.
 -   **Deep University Crawling**:
     -   Goes beyond job boards by crawling faculty and department pages (`/jobs`, `/vacancies`, `/career`).
     -   Uses a heuristic-based crawler to navigate up to 4 levels deep.
@@ -21,7 +21,7 @@
     -   A premium, Apple-inspired interface to manage searches and view system status.
     -   Features glassmorphism design, dark mode, and real-time status updates.
 -   **Smart Notifications**:
-    -   Sends detailed email reports grouped by "New Discoveries", "Inquiry Opportunities", and "Professors".
+    -   Sends detailed email reports grouped by "New Discoveries", "Inquiry Opportunities", "Professors in Your Field", and "Previously Discovered Positions".
 
 ## 🛠️ Methodology
 

@@ -51,6 +51,18 @@ class InquiryDetector:
             r"recruiting\s+postdoc",
         ]
         
+        # Positive signals - Finnish
+        self.finnish_patterns = [
+            r"haen\s+(?:motivoitunutta\s+)?tohtoriopiskelijaa",
+            r"tohtoriopiskelija(?:n)?\s+haetaan",
+            r"avoinna\s+olevat\s+tohtoripaikat",
+            r"phd\s+(?:position|opening)s?\s+(?:available|open)",
+            r"accepting\s+(?:applications?\s+from\s+)?(?:phd\s+)?students?",
+            r"interested\s+(?:phd\s+)?(?:students?|candidates?)\s+(?:should|can)\s+contact",
+            r"tutkimusryhmäni\s+etsii",
+            r"research\s+group\s+(?:is\s+)?(?:looking|seeking)\s+for",
+        ]
+
         # Positive signals - German
         self.german_patterns = [
             r"suchen?\s+(?:derzeit\s+)?doktorand(?:en|in)",
@@ -78,7 +90,7 @@ class InquiryDetector:
             r"stelle\s+besetzt",
         ]
         
-        self.all_positive_patterns = self.english_patterns + self.german_patterns
+        self.all_positive_patterns = self.english_patterns + self.finnish_patterns + self.german_patterns
     
     def scan_page_for_inquiry_signals(self, page_content: str, position_type: str = "phd") -> Dict:
         """

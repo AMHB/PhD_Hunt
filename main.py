@@ -141,7 +141,7 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
     
     print(f"Starting Academic Position Headhunter Agent...")
     print(f"Position Type: {pos_label}")
-    print("Focus: Germany, Austria, Switzerland, Nordic countries + Europe")
+    print("Focus: Finland, Germany, Austria, Switzerland, Nordic countries + Europe")
     
     if position_type == "phd":
         print("Filter: PhD positions only (excluding PostDoc/Professor)")
@@ -260,17 +260,7 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
             except Exception as e:
                 print(f"⚠️ LinkedIn scraping failed: {str(e)}")
             
-            # 2e. Scrape German Universities (NEW - Phase 2)
-            print("\n🇩🇪 Running German Universities Scraper (35+ institutions)...")
-            try:
-                german_scraper = GermanUniversitiesScraper(analyzer)
-                german_jobs = await german_scraper.scrape(context, position_type)
-                all_found_jobs.extend(german_jobs)
-                print(f"✓ Found {len(german_jobs)} jobs from German universities")
-            except Exception as e:
-                print(f"⚠️ German universities scraping failed: {str(e)}")
-            
-            # 2f. Scrape Finnish Universities (NEW - Phase 2)
+            # 2e. Scrape Finnish Universities (Priority focus)
             print("\n🇫🇮 Running Finnish Universities Scraper (12 institutions)...")
             try:
                 finnish_scraper = FinnishUniversitiesScraper(analyzer)
@@ -279,18 +269,33 @@ async def main(recipient_email=None, custom_keywords=None, position_type="phd",
                 print(f"✓ Found {len(finnish_jobs)} jobs from Finnish universities")
             except Exception as e:
                 print(f"⚠️ Finnish universities scraping failed: {str(e)}")
+            
+            # 2f. Scrape German Universities
+            print("\n🇩🇪 Running German Universities Scraper (35+ institutions)...")
+            try:
+                german_scraper = GermanUniversitiesScraper(analyzer)
+                german_jobs = await german_scraper.scrape(context, position_type)
+                all_found_jobs.extend(german_jobs)
+                print(f"✓ Found {len(german_jobs)} jobs from German universities")
+            except Exception as e:
+                print(f"⚠️ German universities scraping failed: {str(e)}")
         
-        # NEW: Faculty & Inquiry Scraping
+        # Faculty & Inquiry Scraping (Finland prioritized, then Germany)
         if search_inquiry_positions or search_professors:
             print("\n" + "="*60)
             print("👨‍🔬 SEARCHING FOR FACULTY & INQUIRY OPPORTUNITIES")
             print("="*60)
             
-            # Load university data
-            university_data = load_universities_from_file("universities.txt")
+            # Load faculty university data (Finland first, then Germany)
+            university_data = load_universities_from_file("universities_faculty.txt")
             if not university_data:
-                # Fallback: use existing universities list
-                university_data = [{"name": u, "url": u, "country": "Unknown"} for u in universities[:20]]
+                university_data = load_universities_from_file("universities.txt")
+            if not university_data:
+                # Fallback: use existing universities list with proper URLs
+                university_data = [
+                    {"name": u, "url": f"https://www.{u}" if not u.startswith("http") else u, "country": "Unknown"}
+                    for u in universities[:20]
+                ]
             
             # Initialize faculty scraper
             faculty_scraper = FacultyScraper(analyzer, university_data, position_type)
